@@ -1,0 +1,14 @@
+[Unit]
+Description=OpenStack Neutron Taas Agent
+After=syslog.target network.target
+
+[Service]
+Type=simple
+User=neutron
+ExecStart=/usr/bin/neutron-taas-openvswitch-agent --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/taas.ini --log-file /var/log/neutron/taas-agent.log
+PrivateTmp=flase
+KillMode=process
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
