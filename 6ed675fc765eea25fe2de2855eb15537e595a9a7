@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_5bbe7b00",
+        "filename": "python-tap-as-a-service.spec",
+        "patchSetId": 9
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 287
+      },
+      "writtenOn": "2018-01-23T10:06:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da9b358b_bbf7c7f4",
+      "range": {
+        "startLine": 87,
+        "startChar": 0,
+        "endLine": 88,
+        "endChar": 38
+      },
+      "revId": "6ed675fc765eea25fe2de2855eb15537e595a9a7",
+      "serverId": "270e2033-b340-4cff-9539-693957ebf0e7",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da9b358b_9bdd2373",
         "filename": "python-tap-as-a-service.spec",
         "patchSetId": 9
@@ -36,6 +60,30 @@
       "writtenOn": "2018-01-23T09:28:31Z",
       "side": 1,
       "message": "I guess sphinx and oslo-sphinx are not required for unit tests, only to build docs so you can remove it as requires in -tests package.",
+      "range": {
+        "startLine": 90,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 43
+      },
+      "revId": "6ed675fc765eea25fe2de2855eb15537e595a9a7",
+      "serverId": "270e2033-b340-4cff-9539-693957ebf0e7",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_3bbbb710",
+        "filename": "python-tap-as-a-service.spec",
+        "patchSetId": 9
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 287
+      },
+      "writtenOn": "2018-01-23T10:06:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da9b358b_9bdd2373",
       "range": {
         "startLine": 90,
         "startChar": 0,
@@ -65,6 +113,24 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_fb3b0f9b",
+        "filename": "python-tap-as-a-service.spec",
+        "patchSetId": 9
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 287
+      },
+      "writtenOn": "2018-01-23T10:06:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da9b358b_7bda5f7a",
+      "revId": "6ed675fc765eea25fe2de2855eb15537e595a9a7",
+      "serverId": "270e2033-b340-4cff-9539-693957ebf0e7",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da9b358b_5be79b40",
         "filename": "python-tap-as-a-service.spec",
         "patchSetId": 9
@@ -76,6 +142,30 @@
       "writtenOn": "2018-01-23T09:28:31Z",
       "side": 1,
       "message": "IMHO, adding the symlink to /etc/neutron/conf.d/common would be better that /usr/share/neutron/server/taas_plugin.ini but it\u0027s ok if you prefer to keep it here for consistency with other packages.",
+      "range": {
+        "startLine": 125,
+        "startChar": 45,
+        "endLine": 125,
+        "endChar": 100
+      },
+      "revId": "6ed675fc765eea25fe2de2855eb15537e595a9a7",
+      "serverId": "270e2033-b340-4cff-9539-693957ebf0e7",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_db404b0a",
+        "filename": "python-tap-as-a-service.spec",
+        "patchSetId": 9
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 287
+      },
+      "writtenOn": "2018-01-23T10:06:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da9b358b_5be79b40",
       "range": {
         "startLine": 125,
         "startChar": 45,
