@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_7b793f2f",
+        "filename": "python-tap-as-a-service.spec",
+        "patchSetId": 11
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 287
+      },
+      "writtenOn": "2018-01-23T11:34:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da9b358b_bbb8e7e6",
+      "revId": "710430ab38e6d0ec098ddb9aa2b05914ce1baa87",
+      "serverId": "270e2033-b340-4cff-9539-693957ebf0e7",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da9b358b_fbbe6fd3",
         "filename": "python-tap-as-a-service.spec",
         "patchSetId": 11
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_bb86a711",
+        "filename": "python-tap-as-a-service.spec",
+        "patchSetId": 11
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 287
+      },
+      "writtenOn": "2018-01-23T11:34:43Z",
+      "side": 1,
+      "message": "this is still exist in BR, just removed the duplicated one.",
+      "parentUuid": "da9b358b_fbbe6fd3",
+      "range": {
+        "startLine": 98,
+        "startChar": 0,
+        "endLine": 98,
+        "endChar": 31
+      },
+      "revId": "710430ab38e6d0ec098ddb9aa2b05914ce1baa87",
+      "serverId": "270e2033-b340-4cff-9539-693957ebf0e7",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da9b358b_9bce4382",
         "filename": "python-tap-as-a-service.spec",
         "patchSetId": 11
@@ -53,6 +95,30 @@
       "writtenOn": "2018-01-23T11:15:06Z",
       "side": 1,
       "message": "packages which are required in python-%{plugin} are not required here as there is dependency on it in -tests. I think you can remove these three oslo packages, python-neutron and python-neutron-lib",
+      "range": {
+        "startLine": 99,
+        "startChar": 1,
+        "endLine": 101,
+        "endChar": 33
+      },
+      "revId": "710430ab38e6d0ec098ddb9aa2b05914ce1baa87",
+      "serverId": "270e2033-b340-4cff-9539-693957ebf0e7",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_9b7c0322",
+        "filename": "python-tap-as-a-service.spec",
+        "patchSetId": 11
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 287
+      },
+      "writtenOn": "2018-01-23T11:34:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da9b358b_9bce4382",
       "range": {
         "startLine": 99,
         "startChar": 1,
