@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da9b358b_3b5297de",
+        "filename": "python-tap-as-a-service.spec",
+        "patchSetId": 10
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 273
+      },
+      "writtenOn": "2018-01-23T10:33:24Z",
+      "side": 1,
+      "message": "I really wouldn\u0027t change the path for configuration files. Neutron will load the config located in that folder by default, and most of the projects have followed that approach (LBaaS, L2GW, etc..)\n\nhttps://github.com/rdo-packages/networking-bgpvpn-distgit/blob/rpm-master/python-networking-bgpvpn.spec#L139\n\nhttps://github.com/rdo-packages/networking-l2gw-distgit/blob/rpm-master/python-networking-l2gw.spec#L118\n\nhttps://github.com/rdo-packages/neutron-lbaas-distgit/blob/rpm-master/openstack-neutron-lbaas.spec#L175",
+      "revId": "3f3024800955d59191479cb4badfa97ff6c60feb",
+      "serverId": "270e2033-b340-4cff-9539-693957ebf0e7",
+      "unresolved": false
+    }
+  ]
+}
