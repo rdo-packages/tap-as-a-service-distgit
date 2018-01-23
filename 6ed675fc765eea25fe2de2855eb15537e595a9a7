@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da9b358b_bbf7c7f4",
+        "filename": "python-tap-as-a-service.spec",
+        "patchSetId": 9
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 128
+      },
+      "writtenOn": "2018-01-23T09:28:31Z",
+      "side": 1,
+      "message": "You can remove these two as requirements",
+      "range": {
+        "startLine": 87,
+        "startChar": 0,
+        "endLine": 88,
+        "endChar": 38
+      },
+      "revId": "6ed675fc765eea25fe2de2855eb15537e595a9a7",
+      "serverId": "270e2033-b340-4cff-9539-693957ebf0e7",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_9bdd2373",
+        "filename": "python-tap-as-a-service.spec",
+        "patchSetId": 9
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 128
+      },
+      "writtenOn": "2018-01-23T09:28:31Z",
+      "side": 1,
+      "message": "I guess sphinx and oslo-sphinx are not required for unit tests, only to build docs so you can remove it as requires in -tests package.",
+      "range": {
+        "startLine": 90,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 43
+      },
+      "revId": "6ed675fc765eea25fe2de2855eb15537e595a9a7",
+      "serverId": "270e2033-b340-4cff-9539-693957ebf0e7",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_7bda5f7a",
+        "filename": "python-tap-as-a-service.spec",
+        "patchSetId": 9
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 128
+      },
+      "writtenOn": "2018-01-23T09:28:31Z",
+      "side": 1,
+      "message": "Comparing to BRs, i guess some packages are still missing, python-neutronclient-tests, python-neutron-tests and python-os-testr",
+      "revId": "6ed675fc765eea25fe2de2855eb15537e595a9a7",
+      "serverId": "270e2033-b340-4cff-9539-693957ebf0e7",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_5be79b40",
+        "filename": "python-tap-as-a-service.spec",
+        "patchSetId": 9
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 128
+      },
+      "writtenOn": "2018-01-23T09:28:31Z",
+      "side": 1,
+      "message": "IMHO, adding the symlink to /etc/neutron/conf.d/common would be better that /usr/share/neutron/server/taas_plugin.ini but it\u0027s ok if you prefer to keep it here for consistency with other packages.",
+      "range": {
+        "startLine": 125,
+        "startChar": 45,
+        "endLine": 125,
+        "endChar": 100
+      },
+      "revId": "6ed675fc765eea25fe2de2855eb15537e595a9a7",
+      "serverId": "270e2033-b340-4cff-9539-693957ebf0e7",
+      "unresolved": false
+    }
+  ]
+}
