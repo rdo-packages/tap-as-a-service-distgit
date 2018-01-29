@@ -16,6 +16,24 @@
       "revId": "48c5a487e7b29287971b976fb09abf6ba527849b",
       "serverId": "270e2033-b340-4cff-9539-693957ebf0e7",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa53dc9_45c45e3f",
+        "filename": "python-tap-as-a-service.spec",
+        "patchSetId": 13
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 273
+      },
+      "writtenOn": "2018-01-29T17:01:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9aa53dc9_25739a4f",
+      "revId": "48c5a487e7b29287971b976fb09abf6ba527849b",
+      "serverId": "270e2033-b340-4cff-9539-693957ebf0e7",
+      "unresolved": false
     }
   ]
 }
