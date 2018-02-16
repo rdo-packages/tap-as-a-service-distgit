@@ -22,24 +22,24 @@ BuildArch:      noarch
 
 BuildRequires:  git
 BuildRequires:  openstack-macros
-BuildRequires:  python-oslotest
-BuildRequires:  python-pbr
-BuildRequires:  python-setuptools
-BuildRequires:  python-subunit
-BuildRequires:  python-testrepository
-BuildRequires:  python-testscenarios
-BuildRequires:  python-testresources
-BuildRequires:  python-testtools
+BuildRequires:  python2-oslotest
+BuildRequires:  python2-pbr
+BuildRequires:  python2-setuptools
+BuildRequires:  python2-subunit
+BuildRequires:  python2-testrepository
+BuildRequires:  python2-testscenarios
+BuildRequires:  python2-testresources
+BuildRequires:  python2-testtools
 BuildRequires:  python2-devel
-BuildRequires:  python-os-testr
+BuildRequires:  python2-os-testr
 BuildRequires:  python-neutron
 BuildRequires:  python-neutron-tests
 BuildRequires:  python-neutron-lib
-BuildRequires:  python-neutronclient
-BuildRequires:  python-neutronclient-tests
-BuildRequires:  python-oslo-i18n
-BuildRequires:  python-oslo-config
-BuildRequires:  python-oslo-utils
+BuildRequires:  python2-neutronclient
+BuildRequires:  python2-neutronclient-tests
+BuildRequires:  python2-oslo-i18n
+BuildRequires:  python2-oslo-config
+BuildRequires:  python2-oslo-utils
 
 %description
 %{common_desc}
@@ -48,19 +48,18 @@ BuildRequires:  python-oslo-utils
 Summary:        An extension to the OpenStack network service (Neutron) for port mirroring
 %{?python_provide:%python_provide python2-%{plugin}}
 
-Requires:       python-pbr >= 1.6
-Requires:       python-babel >= 2.3.4
-Requires:       python-neutron-lib >= 0.0.3
-Requires:       python-oslo-db >= 4.1.0
-Requires:       python-oslo-config >= 2:3.9.0
-Requires:       python-oslo-concurrency >= 3.5.0
-Requires:       python-oslo-log >= 1.14.0
-Requires:       python-oslo-messaging >= 4.5.0
-Requires:       python-oslo-service >= 1.0.0
-Requires:       python-setuptools
+Requires:       python2-pbr >= 1.6
+Requires:       python2-babel >= 2.3.4
+Requires:       python-neutron-lib >= 1.13.0
+Requires:       python2-oslo-db >= 4.27.0
+Requires:       python2-oslo-config >= 2:5.1.0
+Requires:       python2-oslo-concurrency >= 3.25.0
+Requires:       python2-oslo-log >= 3.36.0
+Requires:       python2-oslo-messaging >= 5.29.0
+Requires:       python2-oslo-service >= 1.24.0
 Requires:       openstack-neutron-common
-Requires:       python-oslo-i18n
-Requires:       python-oslo-utils
+Requires:       python2-oslo-i18n
+Requires:       python2-oslo-utils
 
 %description -n python2-%{plugin}
 %{common_desc}
@@ -80,17 +79,17 @@ Documentation for Tap-as-a-service
 Summary:        Tap-as-a-Service Tests
 
 Requires:       python-%{plugin} = %{version}-%{release}
-Requires:       python-subunit >= 0.0.18
-Requires:       python-oslotest >= 1.10.0
-Requires:       python-testrepository >= 0.0.18
-Requires:       python-testresources >= 0.2.4
-Requires:       python-testscenarios >= 0.4
-Requires:       python-testtools >= 1.4.0
-Requires:       python-os-testr
+Requires:       python2-subunit >= 0.0.18
+Requires:       python2-oslotest >= 1.10.0
+Requires:       python2-testrepository >= 0.0.18
+Requires:       python2-testresources >= 0.2.4
+Requires:       python2-testscenarios >= 0.4
+Requires:       python2-testtools >= 1.4.0
+Requires:       python2-os-testr
 Requires:       python-neutron-tests
-Requires:       python-neutronclient
-Requires:       python-neutronclient-tests
-Requires:       python-oslotest
+Requires:       python2-neutronclient
+Requires:       python2-neutronclient-tests
+Requires:       python2-oslotest
 
 %description tests
 Tap-as-a-Service set of tests
