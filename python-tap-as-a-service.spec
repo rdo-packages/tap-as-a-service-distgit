@@ -12,8 +12,8 @@ leaving one port to another port, which is usually different from the original \
 destinations of the packets being mirrored.
 
 Name:           python-%{plugin}
-Version:        XXX
-Release:        XXX
+Version:        3.0.0
+Release:        1%{?dist}
 Summary:        Neutron Tap as a Service
 License:        ASL 2.0
 URL:            https://git.openstack.org/cgit/openstack/%{plugin}
@@ -144,3 +144,6 @@ ln -s %{_sysconfdir}/neutron/taas_plugin.ini %{buildroot}/%{_datadir}/neutron/se
 %{python2_sitelib}/%{module}/tests
 
 %changelog
+* Thu Mar 08 2018 RDO <dev@lists.rdoproject.org> 3.0.0-1
+- Update to 3.0.0
+
