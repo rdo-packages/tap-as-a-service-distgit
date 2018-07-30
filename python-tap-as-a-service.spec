@@ -144,3 +144,4 @@ ln -s %{_sysconfdir}/neutron/taas_plugin.ini %{buildroot}/%{_datadir}/neutron/se
 %{python2_sitelib}/%{module}/tests
 
 %changelog
+# REMOVEME: error caused by commit http://git.openstack.org/cgit/openstack/tap-as-a-service/commit/?id=84846d52fdbbf6d622debc26fdb40c652817bc9b
