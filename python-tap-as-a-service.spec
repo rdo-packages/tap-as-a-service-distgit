@@ -35,6 +35,7 @@ BuildRequires:  python2-os-testr
 BuildRequires:  python-neutron
 BuildRequires:  python-neutron-tests
 BuildRequires:  python-neutron-lib
+BuildRequires:  python2-neutron-lib-tests
 BuildRequires:  python2-neutronclient
 BuildRequires:  python2-neutronclient-tests
 BuildRequires:  python2-oslo-i18n
