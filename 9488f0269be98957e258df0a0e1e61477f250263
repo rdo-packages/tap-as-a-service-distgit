@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9abe1de1_49fac476",
+        "filename": "python-tap-as-a-service.spec",
+        "patchSetId": 7
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 403
+      },
+      "writtenOn": "2018-12-11T09:58:19Z",
+      "side": 1,
+      "message": "remove this, oslo-sphinx already covered on L84",
+      "range": {
+        "startLine": 86,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 6
+      },
+      "revId": "9488f0269be98957e258df0a0e1e61477f250263",
+      "serverId": "270e2033-b340-4cff-9539-693957ebf0e7",
+      "unresolved": false
+    }
+  ]
+}
