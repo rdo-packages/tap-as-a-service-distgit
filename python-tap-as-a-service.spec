@@ -158,3 +158,4 @@ export PYTHON=%{pyver_bin}
 %{pyver_sitelib}/%{module}/tests
 
 %changelog
+# REMOVEME: error caused by commit http://git.openstack.org/cgit/openstack/tap-as-a-service/commit/?id=6ece9f5ee095494dc6c31e405e6437354a13dd7d
