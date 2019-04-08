@@ -23,12 +23,12 @@ leaving one port to another port, which is usually different from the original \
 destinations of the packets being mirrored.
 
 Name:           python-%{plugin}
-Version:        XXX
-Release:        XXX
+Version:        4.0.0
+Release:        1%{?dist}
 Summary:        Neutron Tap as a Service
 License:        ASL 2.0
 URL:            https://git.openstack.org/cgit/openstack/%{plugin}
-Source0:        http://tarballs.openstack.org/%{plugin}/%{plugin}-%{upstream_version}.tar.gz
+Source0:        https://github.com/openstack/%{plugin}/archive/%{upstream_version}.tar.gz
 BuildArch:      noarch
 
 BuildRequires:  git
@@ -158,3 +158,6 @@ export PYTHON=%{pyver_bin}
 %{pyver_sitelib}/%{module}/tests
 
 %changelog
+* Mon Apr 08 2019 RDO <dev@lists.rdoproject.org> 4.0.0-1
+- Update to 4.0.0
+
