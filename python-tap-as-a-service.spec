@@ -133,6 +133,9 @@ cp etc/*.ini %{buildroot}/%{_sysconfdir}/neutron/
 install -d -m 755 %{buildroot}/%{_datadir}/neutron/server
 ln -s %{_sysconfdir}/neutron/taas_plugin.ini %{buildroot}/%{_datadir}/neutron/server/taas_plugin.ini
 
+install -d -m 755 %{buildroot}/%{_sysconfdir}/neutron/rootwrap.d
+mv %{buildroot}%{_prefix}/etc/neutron/rootwrap.d/taas-i40e-sysfs.filters %{buildroot}/%{_sysconfdir}/neutron/rootwrap.d/taas-i40e-sysfs.filters
+
 %check
 export PYTHON=%{pyver_bin}
 %{pyver_bin} setup.py testr
@@ -140,10 +143,12 @@ export PYTHON=%{pyver_bin}
 %files -n python%{pyver}-%{plugin}
 %license LICENSE
 %doc README.rst
+%{_bindir}/i40e_sysfs_command
 %{pyver_sitelib}/%{module}
 %{pyver_sitelib}/tap_as_a_service-*.egg-info
 %config(noreplace) %attr(0640, root, neutron) %{_sysconfdir}/neutron/taas.ini
 %config(noreplace) %attr(0640, root, neutron) %{_sysconfdir}/neutron/taas_plugin.ini
+%config(noreplace) %attr(0640, root, neutron) %{_sysconfdir}/neutron/rootwrap.d/taas-i40e-sysfs.filters
 %{_datadir}/neutron/server/taas_plugin.ini
 %exclude %{pyver_sitelib}/%{module}/tests
 
