@@ -37,12 +37,11 @@ BuildRequires:  python%{pyver}-oslotest
 BuildRequires:  python%{pyver}-pbr
 BuildRequires:  python%{pyver}-setuptools
 BuildRequires:  python%{pyver}-subunit
-BuildRequires:  python%{pyver}-testrepository
 BuildRequires:  python%{pyver}-testscenarios
 BuildRequires:  python%{pyver}-testresources
 BuildRequires:  python%{pyver}-testtools
 BuildRequires:  python%{pyver}-devel
-BuildRequires:  python%{pyver}-os-testr
+BuildRequires:  python%{pyver}-stestr
 BuildRequires:  python%{pyver}-neutron
 BuildRequires:  python%{pyver}-neutron-tests
 BuildRequires:  python%{pyver}-neutron-lib
@@ -94,11 +93,10 @@ Summary:        Tap-as-a-Service Tests
 Requires:       python%{pyver}-%{plugin} = %{version}-%{release}
 Requires:       python%{pyver}-subunit >= 0.0.18
 Requires:       python%{pyver}-oslotest >= 1.10.0
-Requires:       python%{pyver}-testrepository >= 0.0.18
 Requires:       python%{pyver}-testresources >= 0.2.4
 Requires:       python%{pyver}-testscenarios >= 0.4
 Requires:       python%{pyver}-testtools >= 1.4.0
-Requires:       python%{pyver}-os-testr
+Requires:       python%{pyver}-stestr
 Requires:       python%{pyver}-neutron-tests
 Requires:       python%{pyver}-neutronclient
 Requires:       python%{pyver}-neutronclient-tests
@@ -138,7 +136,7 @@ mv %{buildroot}%{_prefix}/etc/neutron/rootwrap.d/taas-i40e-sysfs.filters %{build
 
 %check
 export PYTHON=%{pyver_bin}
-%{pyver_bin} setup.py testr
+stestr-%{pyver} run
 
 %files -n python%{pyver}-%{plugin}
 %license LICENSE
