@@ -12,7 +12,8 @@
 %global plugin tap-as-a-service
 %global module neutron_taas
 %global servicename neutron-taas
-%global with_doc 1
+# oslosphinx do not work with sphinx > 2.0
+%global with_doc 0
 %{!?upstream_version: %global upstream_version %{version}%{?milestone}}
 
 %global common_desc \
