@@ -60,9 +60,9 @@ BuildRequires:  python%{pyver}-oslo-utils
 Summary:        An extension to the OpenStack network service (Neutron) for port mirroring
 %{?python_provide:%python_provide python%{pyver}-%{plugin}}
 
-Requires:       python%{pyver}-pbr >= 1.6
+Requires:       python%{pyver}-pbr >= 2.0.0
 Requires:       python%{pyver}-babel >= 2.3.4
-Requires:       python%{pyver}-neutron-lib >= 1.13.0
+Requires:       python%{pyver}-neutron-lib >= 1.25.0
 Requires:       python%{pyver}-oslo-db >= 4.27.0
 Requires:       python%{pyver}-oslo-config >= 2:5.1.0
 Requires:       python%{pyver}-oslo-concurrency >= 3.25.0
