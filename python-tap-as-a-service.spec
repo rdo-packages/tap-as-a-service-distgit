@@ -13,8 +13,8 @@ leaving one port to another port, which is usually different from the original \
 destinations of the packets being mirrored.
 
 Name:           python-%{plugin}
-Version:        XXX
-Release:        XXX
+Version:        7.0.0
+Release:        1%{?dist}
 Summary:        Neutron Tap as a Service
 License:        ASL 2.0
 URL:            https://git.openstack.org/cgit/openstack/%{plugin}
@@ -151,3 +151,6 @@ stestr-3 run
 %{python3_sitelib}/%{module}/tests
 
 %changelog
+* Mon Nov 02 2020 RDO <dev@lists.rdoproject.org> 7.0.0-1
+- Update to 7.0.0
+
