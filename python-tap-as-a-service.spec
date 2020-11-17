@@ -21,7 +21,7 @@ URL:            https://git.openstack.org/cgit/openstack/%{plugin}
 Source0:        http://tarballs.openstack.org/%{plugin}/%{plugin}-%{upstream_version}.tar.gz
 BuildArch:      noarch
 
-BuildRequires:  git
+BuildRequires:  git-core
 BuildRequires:  openstack-macros
 BuildRequires:  python3-oslotest
 BuildRequires:  python3-pbr
