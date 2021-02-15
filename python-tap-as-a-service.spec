@@ -41,6 +41,8 @@ BuildRequires:  python3-neutronclient-tests
 BuildRequires:  python3-oslo-i18n
 BuildRequires:  python3-oslo-config
 BuildRequires:  python3-oslo-utils
+# Some unit tests do "which vim"
+BuildRequires:  vim
 
 %description
 %{common_desc}
