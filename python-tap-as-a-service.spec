@@ -51,9 +51,9 @@ BuildRequires:  vim
 Summary:        An extension to the OpenStack network service (Neutron) for port mirroring
 %{?python_provide:%python_provide python3-%{plugin}}
 
-Requires:       python3-pbr >= 2.0.0
-Requires:       python3-babel >= 2.3.4
-Requires:       python3-neutron-lib >= 1.25.0
+Requires:       python3-pbr >= 5.5.0
+Requires:       python3-babel >= 2.5.1
+Requires:       python3-neutron-lib >= 2.6.0
 Requires:       python3-oslo-db >= 4.27.0
 Requires:       python3-oslo-config >= 2:5.1.0
 Requires:       python3-oslo-concurrency >= 3.25.0
