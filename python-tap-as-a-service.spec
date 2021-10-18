@@ -1,9 +1,14 @@
+%{!?upstream_version: %global upstream_version %{commit}}
+%global commit 351c1fbed5c96024eb37ddc8aa64313054e33069
+%global shortcommit %(c=%{commit}; echo ${c:0:7})
+# DO NOT REMOVE ALPHATAG
+%global alphatag .%{shortcommit}git
+
 %global plugin tap-as-a-service
 %global module neutron_taas
 %global servicename neutron-taas
 # oslosphinx do not work with sphinx > 2.0
 %global with_doc 0
-%{!?upstream_version: %global upstream_version %{version}%{?milestone}}
 
 %global common_desc \
 Tap-as-a-Service (TaaS) is an extension to the OpenStack network service \
@@ -13,12 +18,12 @@ leaving one port to another port, which is usually different from the original \
 destinations of the packets being mirrored.
 
 Name:           python-%{plugin}
-Version:        XXX
-Release:        XXX
+Version:        7.0.0
+Release:        2%{?alphatag}%{?dist}
 Summary:        Neutron Tap as a Service
 License:        ASL 2.0
 URL:            https://git.openstack.org/cgit/openstack/%{plugin}
-Source0:        http://tarballs.openstack.org/%{plugin}/%{plugin}-%{upstream_version}.tar.gz
+Source0:        https://opendev.org/x/tap-as-a-service/archive/%{upstream_version}.tar.gz#/%{module}-%{shortcommit}.tar.gz
 BuildArch:      noarch
 
 BuildRequires:  git-core
@@ -153,3 +158,5 @@ stestr-3 run
 %{python3_sitelib}/%{module}/tests
 
 %changelog
+* Mon Oct 18 2021 Joel Capitao <jcapitao@redhat.com> - 7.0.0-2.351c1fbegit
+- Update to post 7.0.0 (351c1fbed5c96024eb37ddc8aa64313054e33069)
