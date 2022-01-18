@@ -5,5 +5,5 @@ global:Anonymous-Users	Anonymous Users
 401cf37bee35d1c809d4d957e55f2a304f8eed69	rdo-provenpackagers
 adf9dfee2abf4c7357629bc40b1a0eea9fedb650	openstack/tap-as-a-service-core
 05a678d3d4a168e149d5e8a0063bbd1b1c5526da	Administrators
-6ddfecad023c6f4fa3ac8c4d2583c502ea675a73	Non-Interactive Users
+6ddfecad023c6f4fa3ac8c4d2583c502ea675a73	Service Users
 2139cf3f4ca67bf2cfacd4d402cfd511e6b39b4a	openstack/tap-as-a-service-ptl
