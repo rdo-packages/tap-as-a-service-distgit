@@ -153,3 +153,4 @@ stestr-3 run
 %{python3_sitelib}/%{module}/tests
 
 %changelog
+# REMOVEME: error caused by commit https://opendev.org/openstack/tap-as-a-service/commit/fedca42dbdcd3a2ac740bfe77b471f02785f9815
