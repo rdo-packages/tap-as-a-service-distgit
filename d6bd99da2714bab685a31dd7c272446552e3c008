@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f38e6bbe_89e10a22",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 403
+      },
+      "writtenOn": "2022-06-28T05:05:06Z",
+      "side": 1,
+      "message": "recheck pyroute2 0.6.6 available now",
+      "revId": "d6bd99da2714bab685a31dd7c272446552e3c008",
+      "serverId": "270e2033-b340-4cff-9539-693957ebf0e7"
+    }
+  ]
+}
