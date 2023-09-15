@@ -1,3 +1,4 @@
+%global milestone .0rc1
 %global plugin tap-as-a-service
 %global module neutron_taas
 %global servicename neutron-taas
@@ -15,12 +16,16 @@ leaving one port to another port, which is usually different from the original \
 destinations of the packets being mirrored.
 
 Name:           python-%{plugin}
-Version:        XXX
-Release:        XXX
+Version:        12.0.0
+Release:        0.1%{?milestone}%{?dist}
 Summary:        Neutron Tap as a Service
 License:        Apache-2.0
 URL:            https://git.openstack.org/cgit/openstack/%{plugin}
 Source0:        http://tarballs.openstack.org/%{plugin}/%{plugin}-%{upstream_version}.tar.gz
+#
+# patches_base=12.0.0.0rc1
+#
+
 BuildArch:      noarch
 
 BuildRequires:  git-core
@@ -146,3 +151,6 @@ export PYTHON=%{__python3}
 %{python3_sitelib}/%{module}/tests
 
 %changelog
+* Fri Sep 15 2023 RDO <dev@lists.rdoproject.org> 12.0.0-0.1.0rc1
+- Update to 12.0.0.0rc1
+
