@@ -114,7 +114,7 @@ cp etc/*.ini %{buildroot}/%{_sysconfdir}/neutron/
 
 # Make sure neutron-server loads new configuration file
 install -d -m 755 %{buildroot}/%{_datadir}/neutron/server
-ln -s %{_sysconfdir}/neutron/taas_plugin.ini %{buildroot}/%{_datadir}/neutron/server/taas_plugin.ini
+ln -s %{_sysconfdir}/neutron/taas_plugin.ini %{buildroot}/%{_datadir}/neutron/server/taas_plugin.conf
 
 install -d -m 755 %{buildroot}/%{_sysconfdir}/neutron/rootwrap.d
 mv %{buildroot}%{_prefix}/etc/neutron/rootwrap.d/taas-i40e-sysfs.filters %{buildroot}/%{_sysconfdir}/neutron/rootwrap.d/taas-i40e-sysfs.filters
@@ -132,7 +132,7 @@ export PYTHON=%{__python3}
 %config(noreplace) %attr(0640, root, neutron) %{_sysconfdir}/neutron/taas.ini
 %config(noreplace) %attr(0640, root, neutron) %{_sysconfdir}/neutron/taas_plugin.ini
 %config(noreplace) %attr(0640, root, neutron) %{_sysconfdir}/neutron/rootwrap.d/taas-i40e-sysfs.filters
-%{_datadir}/neutron/server/taas_plugin.ini
+%{_datadir}/neutron/server/taas_plugin.conf
 %exclude %{python3_sitelib}/%{module}/tests
 
 %if 0%{?with_doc}
