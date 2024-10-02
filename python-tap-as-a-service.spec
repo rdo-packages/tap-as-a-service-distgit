@@ -110,6 +110,8 @@ rm -rf doc/build/html/.{doctrees,buildinfo}
 %install
 %pyproject_install
 
+PYTHONPATH="%{buildroot}/%{python3_sitelib}" oslo-config-generator --config-file=etc/oslo-config-generator/taas.ini
+
 install -d -m 755 %{buildroot}/%{_sysconfdir}/neutron/
 cp etc/*.ini %{buildroot}/%{_sysconfdir}/neutron/
 
@@ -119,6 +121,8 @@ ln -s %{_sysconfdir}/neutron/taas_plugin.ini %{buildroot}/%{_datadir}/neutron/se
 
 install -d -m 755 %{buildroot}/%{_sysconfdir}/neutron/rootwrap.d
 mv %{buildroot}%{_prefix}/etc/neutron/rootwrap.d/taas-i40e-sysfs.filters %{buildroot}/%{_sysconfdir}/neutron/rootwrap.d/taas-i40e-sysfs.filters
+
+install -p -D -m 640 etc/taas.ini.sample %{buildroot}/%{_sysconfdir}/neutron/taas.ini
 
 %check
 export PYTHON=%{__python3}
