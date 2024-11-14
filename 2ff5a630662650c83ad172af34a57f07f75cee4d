@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "53e082e4_e25782f9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 635
+      },
+      "writtenOn": "2024-11-14T13:25:19Z",
+      "side": 1,
+      "message": "https://bugs.launchpad.net/tap-as-a-service/+bug/2088175",
+      "revId": "2ff5a630662650c83ad172af34a57f07f75cee4d",
+      "serverId": "270e2033-b340-4cff-9539-693957ebf0e7"
+    }
+  ]
+}
