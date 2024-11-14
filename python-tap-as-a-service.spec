@@ -151,3 +151,4 @@ export PYTHON=%{__python3}
 %{python3_sitelib}/%{module}/tests
 
 %changelog
+# REMOVEME: error caused by commit https://opendev.org/openstack/tap-as-a-service/commit/2ef1b1f18153d0e5117ebc6673397f931e270334
