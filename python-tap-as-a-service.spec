@@ -110,7 +110,8 @@ rm -rf doc/build/html/.{doctrees,buildinfo}
 %install
 %pyproject_install
 
-PYTHONPATH="%{buildroot}/%{python3_sitelib}" oslo-config-generator --config-file=etc/oslo-config-generator/taas.ini
+PYTHONPATH="%{buildroot}/%{python3_sitelib}" oslo-config-generator --config-file=etc/oslo-config-generator/taas_agent.ini
+PYTHONPATH="%{buildroot}/%{python3_sitelib}" oslo-config-generator --config-file=etc/oslo-config-generator/taas_plugin.ini
 
 install -d -m 755 %{buildroot}/%{_sysconfdir}/neutron/
 cp etc/*.ini %{buildroot}/%{_sysconfdir}/neutron/
@@ -118,11 +119,10 @@ cp etc/*.ini %{buildroot}/%{_sysconfdir}/neutron/
 # Make sure neutron-server loads new configuration file
 install -d -m 755 %{buildroot}/%{_datadir}/neutron/server
 ln -s %{_sysconfdir}/neutron/taas_plugin.ini %{buildroot}/%{_datadir}/neutron/server/taas_plugin.conf
+ln -s %{_sysconfdir}/neutron/taas_agent.ini %{buildroot}/%{_sysconfdir}/neutron/conf.d/neutron-openvswitch-agent
 
 install -d -m 755 %{buildroot}/%{_sysconfdir}/neutron/rootwrap.d
 mv %{buildroot}%{_prefix}/etc/neutron/rootwrap.d/taas-i40e-sysfs.filters %{buildroot}/%{_sysconfdir}/neutron/rootwrap.d/taas-i40e-sysfs.filters
-
-install -p -D -m 640 etc/taas.ini.sample %{buildroot}/%{_sysconfdir}/neutron/taas.ini
 
 %check
 export PYTHON=%{__python3}
@@ -134,10 +134,11 @@ export PYTHON=%{__python3}
 %{_bindir}/i40e_sysfs_command
 %{python3_sitelib}/%{module}
 %{python3_sitelib}/tap_as_a_service-*.dist-info
-%config(noreplace) %attr(0640, root, neutron) %{_sysconfdir}/neutron/taas.ini
+%config(noreplace) %attr(0640, root, neutron) %{_sysconfdir}/neutron/taas_agent.ini
 %config(noreplace) %attr(0640, root, neutron) %{_sysconfdir}/neutron/taas_plugin.ini
 %config(noreplace) %attr(0640, root, neutron) %{_sysconfdir}/neutron/rootwrap.d/taas-i40e-sysfs.filters
 %{_datadir}/neutron/server/taas_plugin.conf
+%{_datadir}/neutron/conf.d/neutron-openvswitch-agent
 %exclude %{python3_sitelib}/%{module}/tests
 
 %if 0%{?with_doc}
