@@ -1,0 +1,8 @@
+Code-Review+2: Karolina Kula <kkula@redhat.com>
+Verified+2: Zuul CI <zuul@review.rdoproject.org>
+Workflow+1: Karolina Kula <kkula@redhat.com>
+Submitted-by: Zuul CI <zuul@review.rdoproject.org>
+Submitted-at: Thu, 13 Mar 2025 09:17:46 +0000
+Reviewed-on: https://review.rdoproject.org/r/c/openstack/tap-as-a-service-distgit/+/56699
+Project: openstack/tap-as-a-service-distgit
+Branch: refs/heads/rpm-master
