@@ -4,6 +4,8 @@
 # oslosphinx do not work with sphinx > 2.0
 %global with_doc 0
 %{!?upstream_version: %global upstream_version %{version}%{?milestone}}
+%{?dlrn: %global tarsources tap-as-a-service}
+%{!?dlrn: %global tarsources tap_as_a_service}
 # we are excluding some BRs from automatic generator
 %global excluded_brs doc8 bandit pre-commit hacking flake8-import-order isort astroid pylint psycopg2
 
@@ -20,7 +22,7 @@ Release:        XXX
 Summary:        Neutron Tap as a Service
 License:        Apache-2.0
 URL:            https://git.openstack.org/cgit/openstack/%{plugin}
-Source0:        http://tarballs.openstack.org/%{plugin}/%{plugin}-%{upstream_version}.tar.gz
+Source0:        http://tarballs.openstack.org/%{plugin}/%{tarsources}-%{upstream_version}.tar.gz
 BuildArch:      noarch
 
 BuildRequires:  git-core
@@ -71,7 +73,7 @@ Requires:       python3-oslotest
 Tap-as-a-Service set of tests
 
 %prep
-%autosetup -n %{plugin}-%{upstream_version} -S git
+%autosetup -n %{tarsources}-%{upstream_version} -S git
 # Remove bundled egg-info
 rm -rf %{plugin}.egg-info
 
