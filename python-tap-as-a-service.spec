@@ -1,4 +1,3 @@
-%global milestone .0rc1
 %global plugin tap-as-a-service
 %global module neutron_taas
 %global servicename neutron-taas
@@ -19,13 +18,11 @@ destinations of the packets being mirrored.
 
 Name:           python-%{plugin}
 Version:        15.0.0
-Release:        0.1%{?milestone}%{?dist}
+Release:        1%{?dist}
 Summary:        Neutron Tap as a Service
 License:        Apache-2.0
 URL:            https://git.openstack.org/cgit/openstack/%{plugin}
 Source0:        http://tarballs.openstack.org/%{plugin}/%{tarsources}-%{upstream_version}.tar.gz
-#
-# patches_base=15.0.0.0rc1
 #
 
 BuildArch:      noarch
@@ -155,6 +152,9 @@ export PYTHON=%{__python3}
 %{python3_sitelib}/%{module}/tests
 
 %changelog
+* Wed Apr 02 2025 RDO <dev@lists.rdoproject.org> 15.0.0-1
+- Update to 15.0.0
+
 * Fri Mar 14 2025 RDO <dev@lists.rdoproject.org> 15.0.0-0.1.0rc1
 - Update to 15.0.0.0rc1
 
