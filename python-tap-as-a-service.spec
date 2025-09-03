@@ -21,6 +21,13 @@ URL:            https://git.openstack.org/cgit/openstack/%{plugin}
 Source0:        http://tarballs.openstack.org/%{plugin}/%{plugin}-%{upstream_version}.tar.gz
 #
 
+Patch0001: 0001-GRE-ERSPAN-mirroring-for-taas.patch
+Patch0002: 0002-Tap-Mirror-OVS-driver.patch
+Patch0003: 0003-TAAS-tap-mirror-OVN-driver.patch
+Patch0004: 0004-CLI-for-Tap-Mirrors.patch
+Patch0005: 0005-Documentation-for-tap-mirrors.patch
+Patch0006: 0006-S-RBAC-Default-RBAC-policies.patch
+
 BuildArch:      noarch
 
 BuildRequires:  git-core
@@ -160,4 +167,3 @@ stestr-3 run
 
 * Tue Mar 21 2023 RDO <dev@lists.rdoproject.org> 11.0.0-0.1.0rc1
 - Update to 11.0.0.0rc1
-
