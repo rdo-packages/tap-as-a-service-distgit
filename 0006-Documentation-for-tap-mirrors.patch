@@ -1,0 +1,460 @@
+From 58b2b89b31b3a6d93fe5daa34841c4574429de25 Mon Sep 17 00:00:00 2001
+From: elajkat <lajos.katona@est.tech>
+Date: Tue, 30 Jan 2024 14:31:12 +0100
+Subject: [PATCH 6/8] Documentation for tap-mirrors
+
+Change-Id: I5293af7759f0667a54702882c05b0f34ff8605d2
+Related-Bug: #2015471
+upstream-master: https://review.opendev.org/c/openstack/tap-as-a-service/+/907220
+(cherry picked from commit 7ff8685707d9388a033ae9399e6b7a40b6736995)
+---
+ API_REFERENCE.rst                         |  42 +++-
+ devstack/README.rst                       |  16 ++
+ doc/source/index.rst                      |   3 +-
+ doc/source/tap_mirrors_under_the_hood.rst | 221 ++++++++++++++++++++++
+ doc/source/usage.rst                      | 108 +++++++++++
+ 5 files changed, 382 insertions(+), 8 deletions(-)
+ create mode 100644 doc/source/tap_mirrors_under_the_hood.rst
+ create mode 100644 doc/source/usage.rst
+
+diff --git a/API_REFERENCE.rst b/API_REFERENCE.rst
+index dc88626..c7d6c58 100644
+--- a/API_REFERENCE.rst
++++ b/API_REFERENCE.rst
+@@ -317,15 +317,43 @@ and tap-as-a-service has an extension for taas related commands.
+ 
+ * Update tap flow **openstack tap flow update** <tap flow id/tap flow name> --name <new name of the tap flow> --description <new description of the tap flow>
+ 
+-Tap Mirror CLI
+-^^^^^^^^^^^^^^
++Openstack CLI for tap mirrors
++-----------------------------
+ 
+-* Create tap mirror: **openstack tap mirror create** --port <name or ID of the port to mirror> --name <name of the tap mirror> --directions <direction of the mirroring, a direction and mirror id pair, direction can be IN and OUT can be repeated to represent both IN and OUT> --remote-ip <The IP of the destination of the mirroring> --mirror-type <the type of the mirroring can be ger and erspanv1>
++* Create tap mirror: **openstack tap mirror create** --name <name of the tap mirror> --description <description for the tap mirror> --port <the name or UUID of the port to associate with the tap mirror> --directions <direction dict keys are IN and OUT, the value is the tunnel ID, i.e.: IN=102, can be repeated> --remote-ip <the destination of the mirroring> --mirror-type <can be gre or erspanv1>
+ 
+-* List tap mirror: **openstack tap mirror list**
++* List tap mirrors: **openstack tap mirror list**
+ 
+-* Show tap mirror: **openstack tap mirror show** <tap mirror id/tap mirror name>
++* Show tap mirrors: **openstack tap mirror show** <Name or ID of the tap mirror>
+ 
+-* Delete tap mirror: **openstack tap mirror delete** <tap mirror id/tap mirror name>
++* Delete tap mirror: **openstack tap mirror delete** <Name or ID of the tap mirror>
+ 
+-* Update tap mirror: **openstack tap mirror update** <tap mirror id or name> --name <new name of the tap mirror> --description <new description of the tap mirror>
++* Update tap mirror: **openstack tap mirror update** <Name or ID of the tap mirror> --name <name of the tap mirror> --description <description for the tap mirror>
++
++Workflow
++=========
++
++In this section we describe a simple sequence of steps to use TaaS.
++
++Workflow Sequence for tap services and tap flows
++------------------------------------------------
++
++1. Create a Neutron port with 'port_security_enabled' set to 'false'.
++
++2. Launch a VM (VM on which you want to monitor/receive the mirrored data).
++   Associate the Neutron port created in step 1 while creating the VM.
++
++3. Using Neutron Client command for TaaS **neutron tap-service-create** or
++   via REST APIs create a Tap Service instance by associating the port
++   created in step 1.
++
++4. Using Neutron Client command for TaaS **neutron tap-flow-create** or
++   via REST APIs create a Tap Flow instance by associating the Tap Service
++   instance created in step 3 and the target Neutron port from which you want
++   to mirror traffic (assuming the Neutron port from which the traffic
++   needs to be monitored already exists.)
++   Mirroring can be done for both incoming and/or outgoing traffic from the
++   target Neutron port.
++
++5. Observe the mirrored traffic on the monitoring VM by running tools such as
++   tcpdump.
+diff --git a/devstack/README.rst b/devstack/README.rst
+index c7c61ab..9f7a26e 100644
+--- a/devstack/README.rst
++++ b/devstack/README.rst
+@@ -8,3 +8,19 @@ A `local.conf` recipe to enable tap-as-a-service::
+     enable_plugin tap-as-a-service https://opendev.org/x/tap-as-a-service
+     enable_service taas
+     TAAS_SERVICE_DRIVER=TAAS:TAAS:neutron_taas.services.taas.service_drivers.taas_rpc.TaasRpcDriver:default
++
++
++To enable mirroring via GRE or ERSPAN tunnels::
++
++    [[local|localrc]]
++    enable_plugin tap-as-a-service https://opendev.org/x/tap-as-a-service
++    enable_service taas
++    enable_service tap_mirror
++
++To enable the mirroring with OVS driver::
++
++    TAAS_SERVICE_DRIVER=TAAS:TAAS:neutron_taas.services.taas.service_drivers.taas_rpc.TaasRpcDriver:default
++
++To enable mirroring with OVN driver::
++
++    TAAS_SERVICE_DRIVER=TAAS:TAAS:neutron_taas.services.taas.service_drivers.ovn.taas_ovn.TaasOvnDriver:default
+diff --git a/doc/source/index.rst b/doc/source/index.rst
+index 8bd62c9..ecbc8c4 100644
+--- a/doc/source/index.rst
++++ b/doc/source/index.rst
+@@ -17,6 +17,8 @@ Contents:
+    contributing
+    specs/index
+    presentations
++   usage
++   tap_mirrors_under_the_hood
+ 
+ Indices and tables
+ ==================
+@@ -24,4 +26,3 @@ Indices and tables
+ * :ref:`genindex`
+ * :ref:`modindex`
+ * :ref:`search`
+-
+diff --git a/doc/source/tap_mirrors_under_the_hood.rst b/doc/source/tap_mirrors_under_the_hood.rst
+new file mode 100644
+index 0000000..86c9bef
+--- /dev/null
++++ b/doc/source/tap_mirrors_under_the_hood.rst
+@@ -0,0 +1,221 @@
++..
++      Licensed under the Apache License, Version 2.0 (the "License"); you may
++      not use this file except in compliance with the License. You may obtain
++      a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++      Unless required by applicable law or agreed to in writing, software
++      distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
++      WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
++      License for the specific language governing permissions and limitations
++      under the License.
++
++
++      Convention for heading levels in Neutron devref:
++      =======  Heading 0 (reserved for the title in a document)
++      -------  Heading 1
++      ~~~~~~~  Heading 2
++      +++++++  Heading 3
++      '''''''  Heading 4
++      (Avoid deeper levels because they do not render well.)
++
++
++Open vSwitch tap mirror driver
++==============================
++
++Since OVS v2.10 it is possible to create GRE or ERSPAN mirroring ports.
++
++.. code-block:: console
++
++ $ ovs-vsctl add-port br0 at_erspan0 -- set int at_erspan0 type=erspan options:key=1 options:remote_ip=172.31.1.1 options:erspan_ver=1 options:erspan_idx=1
++ $ # type can be erspan or gre, and
++ $ # options:erspan_ver=1 or 2 selects the version of ERSPAN.
++ $ # Note that tap mirroring uses erspan_ver=1
++
++To create a tap mirror with the OVS driver you have to enable ``TaasRpcDriver`` in the
++``taas_plugin.ini`` configuration file:
++
++.. code-block:: ini
++
++    [service_providers]
++    service_provider = TAAS:TAAS:neutron_taas.services.taas.service_drivers.taas_rpc.TaasRpcDriver:default
++
++.. note::
++
++    The same driver must be set to use taas with tap-services and tap-flows.
++
++The Openstack CLI workflow is the following to create an ERSPANv1 mirror:
++
++.. code-block:: bash
++
++ $ openstack network create net0
++ $ openstack subnet create subnet0 --subnet-range <CIDR of the subnet> --network net0
++ $ openstack port create mirror_port --network net0
++ $ openstack server create --flavor <flavor ID> --image <Image name or ID> --nic port-id=mirror_port  mirror_vm0
++ $ openstack tap mirror create --port mirror_port --name mirror1 --directions IN=102 --remote-ip 100.109.0.221 --mirror-type erspanv1
++ +-------------+--------------------------------------+
++ | Field       | Value                                |
++ +-------------+--------------------------------------+
++ | description |                                      |
++ | directions  | {'IN': '102'}                        |
++ | id          | 7171328e-fcfe-40ab-8e27-84ce7d57a5cd |
++ | mirror_type | erspanv1                             |
++ | name        | mirror1                              |
++ | port_id     | 88316ec8-38ca-4115-912a-3d7fab2d6cf7 |
++ | project_id  | fe7c0b79c37b439490d2274405ebf483     |
++ | remote_ip   | 100.109.0.221                        |
++ +-------------+--------------------------------------+
++
++The result of the above commands will result in a new port on ``br-tap``:
++
++.. code-block:: bash
++
++  $ sudo ovs-vsctl show
++  ...
++     Bridge br-tap
++        datapath_type: system
++        Port br-tap
++            Interface br-tap
++                type: internal
++        Port tm_in_c00403
++            Interface tm_in_c00403
++                type: erspan
++                options: {erspan_idx="102", erspan_ver="1", key="102", remote_ip="100.109.0.221"}
++        Port patch-tap-int
++            Interface patch-tap-int
++                type: patch
++                options: {peer=patch-int-tap}
++        Port patch-tap-tun
++            Interface patch-tap-tun
++                type: patch
++                options: {peer=patch-tun-tap}
++
++On ``br-int`` new flows are installed to direct the traffic (in this case only ingress) towards ``br-tap``:
++
++.. code-block:: bash
++
++  $ sudo ovs-ofctl dump-flows br-int
++   ...
++   cookie=0x8f7b2f67055cd027, duration=1282.245s, table=0, n_packets=0, n_bytes=0, idle_age=1282, priority=20,dl_dst=<mac of the mirror_port> actions=output:4,resubmit(,58)
++
++.. note::
++
++   output:4 points to patch-tap-int.
++
++The resulting packet will be like this:
++
++.. code-block:: bash
++
++ Frame 1: 148 bytes on wire (1184 bits), 148 bytes captured (1184 bits)
++ Ethernet II, Src: RealtekU_16:01:cb (52:54:00:16:01:cb), Dst: RealtekU_8e:0e:4b (52:54:00:8e:0e:4b)
++ Internet Protocol Version 4, Src: 100.109.0.82, Dst: 100.109.0.221
++ Generic Routing Encapsulation (ERSPAN)
++ Encapsulated Remote Switch Packet ANalysis Type II
++     0001 .... .... .... = Version: Type II (1)
++     .... 0000 0000 0000 = Vlan: 0
++     000. .... .... .... = COS: 0
++     ...0 0... .... .... = Encap: Originally without VLAN tag (0)
++     .... .0.. .... .... = Truncated: Not truncated (0)
++     .... ..00 0110 0110 = SpanID: 102
++     0000 0000 0000 .... .... .... .... .... = Reserved: 0
++     .... .... .... 0000 0000 0001 0000 0010 = Index: 258
++ Ethernet II, Src: fa:16:3e:4c:0c:be (fa:16:3e:4c:0c:be), Dst: fa:16:3e:1d:e4:f4 (fa:16:3e:1d:e4:f4)
++ Internet Protocol Version 4, Src: 192.171.0.23, Dst: 192.171.0.6
++ Internet Control Message Protocol
++
++``SpanID`` is ``102`` as expected but the ``Index`` is ``258`` which is ``0x102``
++
++OVN tap mirror driver
++=====================
++
++Since OVN v22.12.0 it is possible to create mirrors:
++
++.. code-block:: console
++
++ $ ovn-nbctl mirror-add mirror1 erspan 0 from-lport 100.109.0.48
++ $ # type (2nd parameter after name) can be erspan or gre or local (from a later version)
++ $ # index (3rd parameter) is the tunnel id and the base of ERSPAN idx
++ $ # filter (4th parameter) can be from-lport, to-lport or both (from a later version)
++ $ # sink (5th parameter) is the remote IP of the mirroring.
++
++To create a tap mirror with the OVN driver you have to enable ``TaasOvnDriver`` in the
++``taas_plugin.ini`` configuration file:
++
++.. code-block:: ini
++
++    [service_providers]
++    service_provider = TAAS:TAAS:neutron_taas.services.taas.service_drivers.ovn.taas_ovn.TaasOvnDriver:default
++
++The Openstack CLI workflow is the following to create an ERSPANv1 mirror:
++
++.. code-block:: bash
++
++ $ openstack network create net0
++ $ openstack subnet create subnet0 --subnet-range <CIDR of the subnet> --network net0
++ $ openstack port create mirror_port --network net0
++ $ openstack server create --flavor <flavor ID> --image <Image name or ID> --nic port-id=mirror_port  mirror_vm0
++ $ openstack tap mirror create --port mirror_port --name mirror1 --directions IN=102 --remote-ip 100.109.0.221 --mirror-type erspanv1
++ +-------------+--------------------------------------+
++ | Field       | Value                                |
++ +-------------+--------------------------------------+
++ | description |                                      |
++ | directions  | {'IN': '102'}                        |
++ | id          | 7171328e-fcfe-40ab-8e27-84ce7d57a5cd |
++ | mirror_type | erspanv1                             |
++ | name        | mirror1                              |
++ | port_id     | 88316ec8-38ca-4115-912a-3d7fab2d6cf7 |
++ | project_id  | fe7c0b79c37b439490d2274405ebf483     |
++ | remote_ip   | 100.109.0.221                        |
++ +-------------+--------------------------------------+
++
++The result of the above commands will result a new mirror in the ovn nbdb:
++
++.. code-block:: bash
++
++ $ ovn-nbctl mirror-list
++ tm_in_717132:
++  Type     :  erspan
++  Sink     :  100.109.0.221
++  Filter   :  to-lport
++  Index/Key:  102
++
++Note the "translation" of the parameters.
++Directions IN=102 will Filter=to-lport, and Index/Key:102.
++(OUT direction of course will be from-lport in OVN NBDB)
++
++And of course the port will appear on the integration bridge also:
++
++.. code-block:: bash
++
++ $ ovs-vsctl show
++ ...
++     Bridge br-int
++         ....
++         Port ovn-tm_in_717132
++             Interface ovn-tm_in_717132
++                 type: erspan
++                 options: {erspan_idx="102", erspan_ver="1", key="102", remote_ip="100.109.0.221"}
++
++Please note the ERSPAN header fields also:
++
++.. code-block:: bash
++
++ Frame 1: 148 bytes on wire (1184 bits), 148 bytes captured (1184 bits)
++ Ethernet II, Src: RealtekU_3d:93:57 (52:54:00:3d:93:57), Dst: RealtekU_8e:0e:4b (52:54:00:8e:0e:4b)
++ Internet Protocol Version 4, Src: 100.109.0.48, Dst: 100.109.0.221
++ Generic Routing Encapsulation (ERSPAN)
++ Encapsulated Remote Switch Packet ANalysis Type II
++     0001 .... .... .... = Version: Type II (1)
++     .... 0000 0000 0000 = Vlan: 0
++     000. .... .... .... = COS: 0
++     ...0 0... .... .... = Encap: Originally without VLAN tag (0)
++     .... .0.. .... .... = Truncated: Not truncated (0)
++     .... ..00 0110 0110 = SpanID: 102
++     0000 0000 0000 .... .... .... .... .... = Reserved: 0
++     .... .... .... 0000 0000 0001 0000 0010 = Index: 258
++ Ethernet II, Src: fa:16:3e:50:ed:fd (fa:16:3e:50:ed:fd), Dst: fa:16:3e:6a:49:13 (fa:16:3e:6a:49:13)
++ Internet Protocol Version 4, Src: 192.171.0.25, Dst: 192.171.0.27
++ Internet Control Message Protocol
++
++``SpanID`` is ``102`` as expected but the ``Index`` is ``258`` which is ``0x102``
+diff --git a/doc/source/usage.rst b/doc/source/usage.rst
+new file mode 100644
+index 0000000..e433de0
+--- /dev/null
++++ b/doc/source/usage.rst
+@@ -0,0 +1,108 @@
++..
++      Licensed under the Apache License, Version 2.0 (the "License"); you may
++      not use this file except in compliance with the License. You may obtain
++      a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++      Unless required by applicable law or agreed to in writing, software
++      distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
++      WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
++      License for the specific language governing permissions and limitations
++      under the License.
++
++
++      Convention for heading levels in Neutron devref:
++      =======  Heading 0 (reserved for the title in a document)
++      -------  Heading 1
++      ~~~~~~~  Heading 2
++      +++++++  Heading 3
++      '''''''  Heading 4
++      (Avoid deeper levels because they do not render well.)
++
++Usage Workflow
++==============
++
++1. Create a Neutron port with 'port_security_enabled' set to 'false'.
++
++.. note::
++
++   If you already have a port attached to a virtual machine you can
++   disable port-security on that port and use that for mirroring also.
++
++.. code-block:: console
++
++ $ openstack port create port_tap_service --disable-port-security
++
++2. Launch a VM (VM on which you want to monitor/receive the mirrored data).
++   Associate the Neutron port created in step 1 while creating the VM.
++
++.. note::
++
++   To capture and analize traffic it is suggested to use VM image that has
++   advanced tools like tcpdump.
++
++.. code-block:: console
++
++  $ openstack server create --nic port-id=port_tap_service monitor_vm
++
++3. Using Openstack Client command for TaaS **openstack tap service create** or
++   via REST APIs create a Tap Service instance by associating the port
++   created in step 1.
++
++.. code-block:: console
++
++  $ openstack tap service create --name ts_0 --port port_tap_service
++
++4. Using Openstack Client command for TaaS **openstack tap flow create** or
++   via REST APIs create a Tap Flow instance by associating the Tap Service
++   instance created in step 3 and the target Neutron port from which you want
++   to mirror traffic (assuming the Neutron port from which the traffic
++   needs to be monitored already exists.)
++   Mirroring can be done for both incoming and/or outgoing traffic from the
++   target Neutron port.
++
++.. code-block:: console
++
++  $ openstack tap flow create --name tf_0 --port source_port --tap-service ts_0 --direction BOTH
++
++5. Observe the mirrored traffic on the monitoring VM by running tools such as
++   tcpdump.
++
++Worklow for tap mirrors
++--------------------------------
++
++1. Make sure that the destination of your mirroring is ready.
++   This can be a Host outside of your cloud, or a virtual machine
++   with port_security_enabled=False and with a Floating IP.
++
++.. code-block:: console
++
++ $ openstack network create monitor_net
++ $ openstack subnet create monitor_subnet --subnet-range 192.171.0.0/27 --network monitor_net
++ $ openstack port create vxlan_monitor_port --network monitor_net --disable-port-security --no-security-group
++ $ openstack server create --flavor d1 --image <ubuntu or similar OS to check the mirroring with tcpdump for example> --nic port-id=monitor_port monitor_vm --key-name mykey
++ $ openstack server add floating ip monitor_vm 100.109.0.221
++
++2. Create another Neutron port (the source of the mirroring).
++
++.. code-block:: console
++
++ $ openstack network create mirror_net
++ $ openstack subnet create mirror_subnet --subnet-range 192.170.0.0/27 --network mirror_net
++ $ openstack port create mirror_port --network mirror_net --security-group <pingable and loginable security-group>
++
++3. Boot a VM on the previous port.
++
++.. code-block:: console
++
++ $ openstack server create --security-group <pingable and loginable security-group> --flavor c1 --image cirros-0.6.2-x86_64-disk --nic port-id=mirror_port mirror_vm
++
++4. Create a tap mirror with the source port Id as the port field and
++   the FIP or the IP of the remote host as the remote_ip field of the
++   tap mirror. Make sure that the remote end can be the endpoint of the
++   GRE or ERSPANv1 tunnel.
++
++.. code-block:: console
++
++ $ openstack tap mirror create --port mirror_port --name mirror1 --directions IN=102 --remte-ip 100.109.0.221 --mirror-type erspanv1
+-- 
+2.51.0
+

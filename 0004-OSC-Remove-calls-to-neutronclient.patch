@@ -1,0 +1,945 @@
+From 7b03f89fa5135662ba5115b8fadfdc3f43aff1b1 Mon Sep 17 00:00:00 2001
+From: elajkat <lajos.katona@est.tech>
+Date: Wed, 14 Dec 2022 15:02:25 +0100
+Subject: [PATCH 4/8] OSC: Remove calls to neutronclient
+
+With [1] the python binding code in Neutronclient prints warning
+about future deprecation, change taas osc client code to use
+totally OpenstackSDK.
+
+[1]: https://review.opendev.org/c/openstack/python-neutronclient/+/862371
+
+Depends-On: https://review.opendev.org/c/openstack/openstacksdk/+/871287
+Depends-On (downstream): https://gitlab.cee.redhat.com/eng/openstack/python-openstacksdk/-/commit/71dcfba0cadcc371b95b3fb2b97743018b14fce4
+Related-Bug: #1999774
+Change-Id: Id22e20efbf30dddbdbcb986186e02f056f3ed21d
+upstream-master: https://review.opendev.org/c/openstack/tap-as-a-service/+/867786
+(cherry picked from commit def943f447615df692bb8853a3905f0ec2299a1a)
+---
+ neutron_taas/taas_client/osc/tap_flow.py      |  66 ++++-----
+ neutron_taas/taas_client/osc/tap_service.py   |  74 +++++-----
+ .../tests/unit/taas_client/osc/fakes.py       |   7 +-
+ .../unit/taas_client/osc/test_osc_tap_flow.py | 130 ++++++++++-------
+ .../taas_client/osc/test_osc_tap_service.py   | 131 ++++++++++--------
+ requirements.txt                              |   2 +
+ 6 files changed, 229 insertions(+), 181 deletions(-)
+
+diff --git a/neutron_taas/taas_client/osc/tap_flow.py b/neutron_taas/taas_client/osc/tap_flow.py
+index 3a778fb..8051858 100644
+--- a/neutron_taas/taas_client/osc/tap_flow.py
++++ b/neutron_taas/taas_client/osc/tap_flow.py
+@@ -15,24 +15,20 @@
+ import logging
+ 
+ from osc_lib.cli import format_columns
++from osc_lib.cli import identity as identity_utils
+ from osc_lib.command import command
+ from osc_lib import exceptions
+ from osc_lib import utils as osc_utils
+ from osc_lib.utils import columns as column_util
+ 
+-from neutronclient._i18n import _
+-from neutronclient.common import utils
+-from neutronclient.osc import utils as nc_osc_utils
++from neutron_taas._i18n import _
++from neutron_taas.taas_client.osc import tap_service
+ 
+ LOG = logging.getLogger(__name__)
+ 
+ TAP_FLOW = 'tap_flow'
+ TAP_FLOWS = '%ss' % TAP_FLOW
+ 
+-path = 'taas'
+-object_path = '/%s/' % path
+-resource_path = '/%s/%%s/%%s' % path
+-
+ _attr_map = (
+     ('id', 'ID', column_util.LIST_BOTH),
+     ('tenant_id', 'Tenant', column_util.LIST_LONG_ONLY),
+@@ -62,7 +58,7 @@ class CreateTapFlow(command.ShowOne):
+ 
+     def get_parser(self, prog_name):
+         parser = super().get_parser(prog_name)
+-        nc_osc_utils.add_project_owner_option_to_parser(parser)
++        identity_utils.add_project_owner_option_to_parser(parser)
+         _add_updatable_args(parser)
+         parser.add_argument(
+             '--port',
+@@ -79,7 +75,7 @@ class CreateTapFlow(command.ShowOne):
+             required=True,
+             metavar="DIRECTION",
+             choices=['IN', 'OUT', 'BOTH'],
+-            type=utils.convert_to_uppercase,
++            type=lambda s: s.upper(),
+             help=_('Direction of the Tap flow. Possible options are: '
+                    'IN, OUT, BOTH'))
+         parser.add_argument(
+@@ -90,35 +86,32 @@ class CreateTapFlow(command.ShowOne):
+         return parser
+ 
+     def take_action(self, parsed_args):
+-        client = self.app.client_manager.neutronclient
++        client = self.app.client_manager.network
+         attrs = {}
+         if parsed_args.name is not None:
+             attrs['name'] = str(parsed_args.name)
+         if parsed_args.description is not None:
+             attrs['description'] = str(parsed_args.description)
+         if parsed_args.port is not None:
+-            source_port = client.find_resource('port',
+-                                               parsed_args.port)['id']
++            source_port = client.find_port(parsed_args.port)['id']
+             attrs['source_port'] = source_port
+         if parsed_args.tap_service is not None:
+-            tap_service_id = client.find_resource(
+-                'tap_service', parsed_args.tap_service)['id']
++            tap_service_id = client.find_tap_service(
++                parsed_args.tap_service)['id']
+             attrs['tap_service_id'] = tap_service_id
+         if parsed_args.direction is not None:
+             attrs['direction'] = parsed_args.direction
+         if parsed_args.vlan_filter is not None:
+             attrs['vlan_filter'] = parsed_args.vlan_filter
+         if 'project' in parsed_args and parsed_args.project is not None:
+-            project_id = nc_osc_utils.find_project(
++            project_id = identity_utils.find_project(
+                 self.app.client_manager.identity,
+                 parsed_args.project,
+                 parsed_args.project_domain,
+             ).id
+             attrs['tenant_id'] = project_id
+-        body = {TAP_FLOW: attrs}
+-        obj = client.post('%s%s' % (object_path, TAP_FLOWS),
+-                          body=body)[TAP_FLOW]
+-        columns, display_columns = column_util.get_columns(obj, _attr_map)
++        obj = client.create_tap_flow(**attrs)
++        display_columns, columns = tap_service._get_columns(obj)
+         data = osc_utils.get_dict_properties(obj, columns)
+         return display_columns, data
+ 
+@@ -128,22 +121,21 @@ class ListTapFlow(command.Lister):
+ 
+     def get_parser(self, prog_name):
+         parser = super().get_parser(prog_name)
+-        nc_osc_utils.add_project_owner_option_to_parser(parser)
++        identity_utils.add_project_owner_option_to_parser(parser)
+ 
+         return parser
+ 
+     def take_action(self, parsed_args):
+-        client = self.app.client_manager.neutronclient
++        client = self.app.client_manager.network
+         params = {}
+         if parsed_args.project is not None:
+-            project_id = nc_osc_utils.find_project(
++            project_id = identity_utils.find_project(
+                 self.app.client_manager.identity,
+                 parsed_args.project,
+                 parsed_args.project_domain,
+             ).id
+             params['tenant_id'] = project_id
+-        objs = client.list(TAP_FLOWS, '%s%s' % (object_path, TAP_FLOWS),
+-                           retrieve_all=True, params=params)[TAP_FLOWS]
++        objs = client.tap_flows(retrieve_all=True, params=params)
+         headers, columns = column_util.get_column_definitions(
+             _attr_map, long_listing=True)
+         return (headers, (osc_utils.get_dict_properties(
+@@ -163,10 +155,11 @@ class ShowTapFlow(command.ShowOne):
+         return parser
+ 
+     def take_action(self, parsed_args):
+-        client = self.app.client_manager.neutronclient
+-        id = client.find_resource(TAP_FLOW, parsed_args.tap_flow)['id']
+-        obj = client.get(resource_path % (TAP_FLOWS, id))[TAP_FLOW]
+-        columns, display_columns = column_util.get_columns(obj, _attr_map)
++        client = self.app.client_manager.network
++        id = client.find_tap_flow(parsed_args.tap_flow,
++                                  ignore_missing=False).id
++        obj = client.get_tap_flow(id)
++        display_columns, columns = tap_service._get_columns(obj)
+         data = osc_utils.get_dict_properties(obj, columns)
+         return display_columns, data
+ 
+@@ -185,12 +178,13 @@ class DeleteTapFlow(command.Command):
+         return parser
+ 
+     def take_action(self, parsed_args):
+-        client = self.app.client_manager.neutronclient
++        client = self.app.client_manager.network
+         fails = 0
+         for id_or_name in parsed_args.tap_flow:
+             try:
+-                id = client.find_resource(TAP_FLOW, id_or_name)['id']
+-                client.delete(resource_path % (TAP_FLOWS, id))
++                id = client.find_tap_flow(id_or_name,
++                                          ignore_missing=False).id
++                client.delete_tap_flow(id)
+                 LOG.warning("Tap flow %(id)s deleted", {'id': id})
+             except Exception as e:
+                 fails += 1
+@@ -199,7 +193,7 @@ class DeleteTapFlow(command.Command):
+                           {'id_or_name': id_or_name, 'e': e})
+         if fails > 0:
+             msg = (_("Failed to delete %(fails)s of %(total)s tap flow.") %
+-                   {'fails': fails, 'total': len(parsed_args.tap_service)})
++                   {'fails': fails, 'total': len(parsed_args.tap_flow)})
+             raise exceptions.CommandError(msg)
+ 
+ 
+@@ -217,15 +211,15 @@ class UpdateTapFlow(command.ShowOne):
+         return parser
+ 
+     def take_action(self, parsed_args):
+-        client = self.app.client_manager.neutronclient
+-        id = client.find_resource(TAP_FLOW, parsed_args.tap_flow)['id']
++        client = self.app.client_manager.network
++        original_t_f = client.find_tap_flow(parsed_args.tap_flow,
++                                            ignore_missing=False).id
+         attrs = {}
+         if parsed_args.name is not None:
+             attrs['name'] = str(parsed_args.name)
+         if parsed_args.description is not None:
+             attrs['description'] = str(parsed_args.description)
+-        body = {TAP_FLOW: attrs}
+-        obj = client.put(resource_path % (TAP_FLOWS, id), body)[TAP_FLOW]
++        obj = client.update_tap_flow(original_t_f, **attrs)
+         columns, display_columns = column_util.get_columns(obj, _attr_map)
+         data = osc_utils.get_dict_properties(obj, columns)
+         return display_columns, data
+diff --git a/neutron_taas/taas_client/osc/tap_service.py b/neutron_taas/taas_client/osc/tap_service.py
+index 7ee3efc..1abe7ad 100644
+--- a/neutron_taas/taas_client/osc/tap_service.py
++++ b/neutron_taas/taas_client/osc/tap_service.py
+@@ -14,14 +14,13 @@
+ 
+ import logging
+ 
++from osc_lib.cli import identity as identity_utils
+ from osc_lib.command import command
+ from osc_lib import exceptions
+ from osc_lib import utils as osc_utils
+ from osc_lib.utils import columns as column_util
+ 
+-from neutronclient._i18n import _
+-from neutronclient.neutron import v2_0 as neutronv20
+-from neutronclient.osc import utils as nc_osc_utils
++from neutron_taas._i18n import _
+ 
+ 
+ LOG = logging.getLogger(__name__)
+@@ -29,10 +28,6 @@ LOG = logging.getLogger(__name__)
+ TAP_SERVICE = 'tap_service'
+ TAP_SERVICES = '%ss' % TAP_SERVICE
+ 
+-path = 'taas'
+-object_path = '/%s/' % path
+-resource_path = '/%s/%%s/%%s' % path
+-
+ _attr_map = (
+     ('id', 'ID', column_util.LIST_BOTH),
+     ('tenant_id', 'Tenant', column_util.LIST_LONG_ONLY),
+@@ -52,7 +47,20 @@ def _add_updatable_args(parser):
+ 
+ 
+ def _updatable_args2body(parsed_args, body):
+-    neutronv20.update_dict(parsed_args, body, ['name', 'description'])
++    for attribute in ['name', 'description']:
++        if (hasattr(parsed_args, attribute) and
++                getattr(parsed_args, attribute) is not None):
++            body[attribute] = getattr(parsed_args, attribute)
++
++
++def _get_columns(item):
++    column_map = {}
++    hidden_columns = ['location', 'tenant_id']
++    return osc_utils.get_osc_show_columns_for_sdk_resource(
++        item,
++        column_map,
++        hidden_columns
++    )
+ 
+ 
+ class CreateTapService(command.ShowOne):
+@@ -60,7 +68,7 @@ class CreateTapService(command.ShowOne):
+ 
+     def get_parser(self, prog_name):
+         parser = super().get_parser(prog_name)
+-        nc_osc_utils.add_project_owner_option_to_parser(parser)
++        identity_utils.add_project_owner_option_to_parser(parser)
+         _add_updatable_args(parser)
+         parser.add_argument(
+             '--port',
+@@ -71,26 +79,24 @@ class CreateTapService(command.ShowOne):
+         return parser
+ 
+     def take_action(self, parsed_args):
+-        client = self.app.client_manager.neutronclient
++        client = self.app.client_manager.network
+         attrs = {}
+         if parsed_args.name is not None:
+             attrs['name'] = str(parsed_args.name)
+         if parsed_args.description is not None:
+             attrs['description'] = str(parsed_args.description)
+         if parsed_args.port_id is not None:
+-            port_id = client.find_resource('port', parsed_args.port_id)['id']
++            port_id = client.find_port(parsed_args.port_id)['id']
+             attrs['port_id'] = port_id
+         if 'project' in parsed_args and parsed_args.project is not None:
+-            project_id = nc_osc_utils.find_project(
++            project_id = identity_utils.find_project(
+                 self.app.client_manager.identity,
+                 parsed_args.project,
+                 parsed_args.project_domain,
+             ).id
+             attrs['tenant_id'] = project_id
+-        body = {TAP_SERVICE: attrs}
+-        obj = client.post('%s%s' % (object_path, TAP_SERVICES),
+-                          body=body)[TAP_SERVICE]
+-        columns, display_columns = column_util.get_columns(obj, _attr_map)
++        obj = client.create_tap_service(**attrs)
++        display_columns, columns = _get_columns(obj)
+         data = osc_utils.get_dict_properties(obj, columns)
+         return display_columns, data
+ 
+@@ -100,22 +106,21 @@ class ListTapService(command.Lister):
+ 
+     def get_parser(self, prog_name):
+         parser = super().get_parser(prog_name)
+-        nc_osc_utils.add_project_owner_option_to_parser(parser)
++        identity_utils.add_project_owner_option_to_parser(parser)
+ 
+         return parser
+ 
+     def take_action(self, parsed_args):
+-        client = self.app.client_manager.neutronclient
++        client = self.app.client_manager.network
+         params = {}
+         if parsed_args.project is not None:
+-            project_id = nc_osc_utils.find_project(
++            project_id = identity_utils.find_project(
+                 self.app.client_manager.identity,
+                 parsed_args.project,
+                 parsed_args.project_domain,
+             ).id
+             params['tenant_id'] = project_id
+-        objs = client.list(TAP_SERVICES, '%s%s' % (object_path, TAP_SERVICES),
+-                           retrieve_all=True, params=params)[TAP_SERVICES]
++        objs = client.tap_services(retrieve_all=True, params=params)
+         headers, columns = column_util.get_column_definitions(
+             _attr_map, long_listing=True)
+         return (headers, (osc_utils.get_dict_properties(
+@@ -135,10 +140,11 @@ class ShowTapService(command.ShowOne):
+         return parser
+ 
+     def take_action(self, parsed_args):
+-        client = self.app.client_manager.neutronclient
+-        id = client.find_resource(TAP_SERVICE, parsed_args.tap_service)['id']
+-        obj = client.get(resource_path % (TAP_SERVICES, id))[TAP_SERVICE]
+-        columns, display_columns = column_util.get_columns(obj, _attr_map)
++        client = self.app.client_manager.network
++        id = client.find_tap_service(parsed_args.tap_service,
++                                     ignore_missing=False).id
++        obj = client.get_tap_service(id)
++        display_columns, columns = _get_columns(obj)
+         data = osc_utils.get_dict_properties(obj, columns)
+         return display_columns, data
+ 
+@@ -157,12 +163,14 @@ class DeleteTapService(command.Command):
+         return parser
+ 
+     def take_action(self, parsed_args):
+-        client = self.app.client_manager.neutronclient
++        client = self.app.client_manager.network
+         fails = 0
+         for id_or_name in parsed_args.tap_service:
+             try:
+-                id = client.find_resource(TAP_SERVICE, id_or_name)['id']
+-                client.delete(resource_path % (TAP_SERVICES, id))
++                id = client.find_tap_service(id_or_name,
++                                             ignore_missing=False).id
++
++                client.delete_tap_service(id)
+                 LOG.warning("Tap service %(id)s deleted", {'id': id})
+             except Exception as e:
+                 fails += 1
+@@ -189,15 +197,15 @@ class UpdateTapService(command.ShowOne):
+         return parser
+ 
+     def take_action(self, parsed_args):
+-        client = self.app.client_manager.neutronclient
+-        id = client.find_resource(TAP_SERVICE, parsed_args.tap_service)['id']
++        client = self.app.client_manager.network
++        original_t_s = client.find_tap_service(parsed_args.tap_service,
++                                               ignore_missing=False).id
+         attrs = {}
+         if parsed_args.name is not None:
+             attrs['name'] = str(parsed_args.name)
+         if parsed_args.description is not None:
+             attrs['description'] = str(parsed_args.description)
+-        body = {TAP_SERVICE: attrs}
+-        obj = client.put(resource_path % (TAP_SERVICES, id), body)[TAP_SERVICE]
+-        columns, display_columns = column_util.get_columns(obj, _attr_map)
++        obj = client.update_tap_service(original_t_s, **attrs)
++        display_columns, columns = _get_columns(obj)
+         data = osc_utils.get_dict_properties(obj, columns)
+         return display_columns, data
+diff --git a/neutron_taas/tests/unit/taas_client/osc/fakes.py b/neutron_taas/tests/unit/taas_client/osc/fakes.py
+index b74af47..d1ac927 100644
+--- a/neutron_taas/tests/unit/taas_client/osc/fakes.py
++++ b/neutron_taas/tests/unit/taas_client/osc/fakes.py
+@@ -16,9 +16,6 @@ import copy
+ 
+ from oslo_utils import uuidutils
+ 
+-from neutron_taas.taas_client.osc import tap_flow as osc_tap_flow
+-from neutron_taas.taas_client.osc import tap_service as osc_tap_service
+-
+ 
+ class FakeTapService(object):
+ 
+@@ -48,7 +45,7 @@ class FakeTapService(object):
+             tap_services.append(FakeTapService.create_tap_service(
+                 attrs=attrs))
+ 
+-        return {osc_tap_service.TAP_SERVICES: tap_services}
++        return tap_services
+ 
+ 
+ class FakeTapFlow(object):
+@@ -83,4 +80,4 @@ class FakeTapFlow(object):
+                 attrs['id'] = 'fake_id%d' % i
+             tap_flows.append(FakeTapFlow.create_tap_flow(attrs=attrs))
+ 
+-        return {osc_tap_flow.TAP_FLOWS: tap_flows}
++        return tap_flows
+diff --git a/neutron_taas/tests/unit/taas_client/osc/test_osc_tap_flow.py b/neutron_taas/tests/unit/taas_client/osc/test_osc_tap_flow.py
+index 0798c7f..9ec6a4b 100644
+--- a/neutron_taas/tests/unit/taas_client/osc/test_osc_tap_flow.py
++++ b/neutron_taas/tests/unit/taas_client/osc/test_osc_tap_flow.py
+@@ -17,11 +17,13 @@ import operator
+ from unittest import mock
+ 
+ from neutronclient.tests.unit.osc.v2 import fakes as test_fakes
++from openstack.network.v2 import tap_flow as _tap_flow
+ from osc_lib import utils as osc_utils
+ from osc_lib.utils import columns as column_util
+ from oslo_utils import uuidutils
+ 
+ from neutron_taas.taas_client.osc import tap_flow as osc_tap_flow
++from neutron_taas.taas_client.osc import tap_service as osc_tap_service
+ from neutron_taas.tests.unit.taas_client.osc import fakes
+ 
+ 
+@@ -40,33 +42,41 @@ def _get_data(attrs, columns=sorted_columns):
+     return osc_utils.get_dict_properties(attrs, columns)
+ 
+ 
+-class TestCreateTapService(test_fakes.TestNeutronClientOSCV2):
++class TestCreateTapFlow(test_fakes.TestNeutronClientOSCV2):
+ 
+     columns = (
+-        'Direction',
+-        'ID',
+-        'Name',
+-        'Status',
+-        'Tenant',
++        'direction',
++        'id',
++        'name',
+         'source_port',
++        'status',
+         'tap_service_id',
+     )
+ 
+     def setUp(self):
+-        super(TestCreateTapService, self).setUp()
++        super(TestCreateTapFlow, self).setUp()
+         self.cmd = osc_tap_flow.CreateTapFlow(self.app, self.namespace)
+ 
+     def test_create_tap_flow(self):
+         """Test Create Tap Flow."""
++        port_id = uuidutils.generate_uuid()
++        fake_tap_service = fakes.FakeTapService.create_tap_service(
++            attrs={'port_id': port_id}
++        )
++        port_id = uuidutils.generate_uuid()
+         fake_tap_flow = fakes.FakeTapFlow.create_tap_flow(
+             attrs={
+-                'source_port': uuidutils.generate_uuid(),
+-                'tap_service_id': uuidutils.generate_uuid()
++                'source_port': port_id,
++                'tap_service_id': fake_tap_service['id']
+             }
+         )
+-
+-        self.neutronclient.post = mock.Mock(
+-            return_value={osc_tap_flow.TAP_FLOW: fake_tap_flow})
++        self.app.client_manager.network = mock.Mock()
++        self.app.client_manager.network.create_tap_flow = mock.Mock(
++            return_value=fake_tap_flow)
++        self.app.client_manager.network.find_port = mock.Mock(
++            return_value={'id': port_id})
++        self.app.client_manager.network.find_tap_service = mock.Mock(
++            return_value=fake_tap_service)
+         arg_list = [
+             '--name', fake_tap_flow['name'],
+             '--port', fake_tap_flow['source_port'],
+@@ -81,27 +91,28 @@ class TestCreateTapService(test_fakes.TestNeutronClientOSCV2):
+         ]
+ 
+         parsed_args = self.check_parser(self.cmd, arg_list, verify_list)
+-        with mock.patch.object(self.neutronclient, 'find_resource') as nc_find:
++        with mock.patch.object(
++                self.app.client_manager.network,
++                '_find') as nc_find:
+             nc_find.side_effect = [
+-                {'id': fake_tap_flow['source_port']},
+                 {'id': fake_tap_flow['tap_service_id']}
+             ]
+ 
+             columns, data = self.cmd.take_action(parsed_args)
+-            self.neutronclient.post.assert_called_once_with(
+-                '/taas/tap_flows',
+-                body={
+-                    osc_tap_flow.TAP_FLOW:
+-                        {
+-                            'name': fake_tap_flow['name'],
+-                            'source_port': fake_tap_flow['source_port'],
+-                            'tap_service_id': fake_tap_flow['tap_service_id'],
+-                            'direction': fake_tap_flow['direction']
+-                        }
++            mock_create_t_f = self.app.client_manager.network.create_tap_flow
++            mock_create_t_f.assert_called_once_with(
++                **{
++                    'name': fake_tap_flow['name'],
++                    'source_port': fake_tap_flow['source_port'],
++                    'tap_service_id': fake_tap_flow['tap_service_id'],
++                    'direction': fake_tap_flow['direction']
+                 }
+             )
+             self.assertEqual(self.columns, columns)
+-            self.assertItemEqual(_get_data(fake_tap_flow), data)
++            fake_data = _get_data(
++                fake_tap_flow,
++                osc_tap_service._get_columns(fake_tap_flow)[1])
++            self.assertItemEqual(fake_data, data)
+ 
+ 
+ class TestListTapFlow(test_fakes.TestNeutronClientOSCV2):
+@@ -117,7 +128,9 @@ class TestListTapFlow(test_fakes.TestNeutronClientOSCV2):
+                 'tap_service_id': uuidutils.generate_uuid(),
+             },
+             count=2)
+-        self.neutronclient.list = mock.Mock(return_value=fake_tap_flows)
++        self.app.client_manager.network = mock.Mock()
++        self.app.client_manager.network.tap_flows = mock.Mock(
++            return_value=fake_tap_flows)
+         arg_list = []
+         verify_list = []
+ 
+@@ -125,20 +138,22 @@ class TestListTapFlow(test_fakes.TestNeutronClientOSCV2):
+ 
+         headers, data = self.cmd.take_action(parsed_args)
+ 
+-        self.neutronclient.list.assert_called_once()
++        self.app.client_manager.network.tap_flows.assert_called_once()
+         self.assertEqual(headers, list(headers_long))
+         self.assertListItemEqual(
+             list(data),
+             [_get_data(fake_tap_flow, columns_long) for fake_tap_flow
+-             in fake_tap_flows[osc_tap_flow.TAP_FLOWS]]
++             in fake_tap_flows]
+         )
+ 
+ 
+ class TestDeleteTapFlow(test_fakes.TestNeutronClientOSCV2):
+     def setUp(self):
+         super(TestDeleteTapFlow, self).setUp()
+-        self.neutronclient.find_resource = mock.Mock(
+-            side_effect=lambda _, name_or_id: {'id': name_or_id})
++        self.app.client_manager.network = mock.Mock()
++        self.app.client_manager.network.find_tap_flow = mock.Mock(
++            side_effect=lambda name_or_id, ignore_missing:
++            _tap_flow.TapFlow(id=name_or_id))
+         self.cmd = osc_tap_flow.DeleteTapFlow(self.app, self.namespace)
+ 
+     def test_delete_tap_flow(self):
+@@ -150,7 +165,7 @@ class TestDeleteTapFlow(test_fakes.TestNeutronClientOSCV2):
+                 'tap_service_id': uuidutils.generate_uuid(),
+             }
+         )
+-        self.neutronclient.delete = mock.Mock()
++        self.app.client_manager.network.delete_tap_flow = mock.Mock()
+ 
+         arg_list = [
+             fake_tap_flow['id'],
+@@ -163,30 +178,39 @@ class TestDeleteTapFlow(test_fakes.TestNeutronClientOSCV2):
+ 
+         result = self.cmd.take_action(parsed_args)
+ 
+-        self.neutronclient.delete.assert_called_once_with(
+-            osc_tap_flow.resource_path % ('tap_flows',
+-                                          fake_tap_flow['id']))
++        mock_delete_tap_flow = self.app.client_manager.network.delete_tap_flow
++        mock_delete_tap_flow.assert_called_once_with(fake_tap_flow['id'])
+         self.assertIsNone(result)
+ 
+ 
+ class TestShowTapFlow(test_fakes.TestNeutronClientOSCV2):
++    columns = (
++        'direction',
++        'id',
++        'name',
++        'source_port',
++        'status',
++        'tap_service_id'
++    )
++
+     def setUp(self):
+         super(TestShowTapFlow, self).setUp()
+-        self.neutronclient.find_resource = mock.Mock(
+-            side_effect=lambda _, name_or_id: {'id': name_or_id})
++        self.app.client_manager.network = mock.Mock()
++        self.app.client_manager.network.find_tap_flow = mock.Mock(
++            side_effect=lambda name_or_id, ignore_missing:
++            _tap_flow.TapFlow(id=name_or_id))
+         self.cmd = osc_tap_flow.ShowTapFlow(self.app, self.namespace)
+ 
+     def test_show_tap_flow(self):
+         """Test Show tap flow."""
+-
+         fake_tap_flow = fakes.FakeTapFlow.create_tap_flow(
+             attrs={
+                 'source_port': uuidutils.generate_uuid(),
+                 'tap_service_id': uuidutils.generate_uuid(),
+             }
+         )
+-        self.neutronclient.get = mock.Mock(
+-            return_value={osc_tap_flow.TAP_FLOW: fake_tap_flow})
++        self.app.client_manager.network.get_tap_flow = mock.Mock(
++            return_value=fake_tap_flow)
+         arg_list = [
+             fake_tap_flow['id'],
+         ]
+@@ -198,11 +222,13 @@ class TestShowTapFlow(test_fakes.TestNeutronClientOSCV2):
+ 
+         headers, data = self.cmd.take_action(parsed_args)
+ 
+-        self.neutronclient.get.assert_called_once_with(
+-            osc_tap_flow.resource_path % ('tap_flows',
+-                                          fake_tap_flow['id']))
+-        self.assertEqual(sorted_headers, headers)
+-        self.assertItemEqual(_get_data(fake_tap_flow), data)
++        self.app.client_manager.network.get_tap_flow.assert_called_once_with(
++            fake_tap_flow['id'])
++        self.assertEqual(self.columns, headers)
++        fake_data = _get_data(
++            fake_tap_flow,
++            osc_tap_service._get_columns(fake_tap_flow)[1])
++        self.assertItemEqual(fake_data, data)
+ 
+ 
+ class TestUpdateTapFlow(test_fakes.TestNeutronClientOSCV2):
+@@ -222,8 +248,10 @@ class TestUpdateTapFlow(test_fakes.TestNeutronClientOSCV2):
+     def setUp(self):
+         super(TestUpdateTapFlow, self).setUp()
+         self.cmd = osc_tap_flow.UpdateTapFlow(self.app, self.namespace)
+-        self.neutronclient.find_resource = mock.Mock(
+-            side_effect=lambda _, name_or_id: {'id': name_or_id})
++        self.app.client_manager.network = mock.Mock()
++        self.app.client_manager.network.find_tap_flow = mock.Mock(
++            side_effect=lambda name_or_id, ignore_missing:
++            _tap_flow.TapFlow(id=name_or_id))
+ 
+     def test_update_tap_flow(self):
+         """Test update tap service"""
+@@ -236,8 +264,8 @@ class TestUpdateTapFlow(test_fakes.TestNeutronClientOSCV2):
+         new_tap_flow = copy.deepcopy(fake_tap_flow)
+         new_tap_flow['name'] = self._new_name
+ 
+-        self.neutronclient.put = mock.Mock(
+-            return_value={osc_tap_flow.TAP_FLOW: new_tap_flow})
++        self.app.client_manager.network.update_tap_flow = mock.Mock(
++            return_value=new_tap_flow)
+ 
+         arg_list = [
+             fake_tap_flow['id'],
+@@ -249,9 +277,7 @@ class TestUpdateTapFlow(test_fakes.TestNeutronClientOSCV2):
+         columns, data = self.cmd.take_action(parsed_args)
+         attrs = {'name': self._new_name}
+ 
+-        self.neutronclient.put.assert_called_once_with(
+-            osc_tap_flow.resource_path % ('tap_flows',
+-                                          new_tap_flow['id']),
+-            {osc_tap_flow.TAP_FLOW: attrs})
++        mock_update_t_f = self.app.client_manager.network.update_tap_flow
++        mock_update_t_f.assert_called_once_with(new_tap_flow['id'], **attrs)
+         self.assertEqual(self.columns, columns)
+         self.assertItemEqual(_get_data(new_tap_flow), data)
+diff --git a/neutron_taas/tests/unit/taas_client/osc/test_osc_tap_service.py b/neutron_taas/tests/unit/taas_client/osc/test_osc_tap_service.py
+index 64daf61..2bac89c 100644
+--- a/neutron_taas/tests/unit/taas_client/osc/test_osc_tap_service.py
++++ b/neutron_taas/tests/unit/taas_client/osc/test_osc_tap_service.py
+@@ -17,6 +17,7 @@ import operator
+ from unittest import mock
+ 
+ from neutronclient.tests.unit.osc.v2 import fakes as test_fakes
++from openstack.network.v2 import tap_service
+ from osc_lib import utils as osc_utils
+ from osc_lib.utils import columns as column_util
+ from oslo_utils import uuidutils
+@@ -43,11 +44,10 @@ def _get_data(attrs, columns=sorted_columns):
+ class TestCreateTapService(test_fakes.TestNeutronClientOSCV2):
+ 
+     columns = (
+-        'ID',
+-        'Name',
+-        'Port',
+-        'Status',
+-        'Tenant',
++        'id',
++        'name',
++        'port_id',
++        'status',
+     )
+ 
+     def setUp(self):
+@@ -56,12 +56,17 @@ class TestCreateTapService(test_fakes.TestNeutronClientOSCV2):
+ 
+     def test_create_tap_service(self):
+         """Test Create Tap Service."""
++        port_id = uuidutils.generate_uuid()
+         fake_tap_service = fakes.FakeTapService.create_tap_service(
+-            attrs={'port_id': uuidutils.generate_uuid()}
++            attrs={'port_id': port_id}
+         )
+-
+-        self.neutronclient.post = mock.Mock(
+-            return_value={osc_tap_service.TAP_SERVICE: fake_tap_service})
++        self.app.client_manager.network = mock.Mock()
++        self.app.client_manager.network.create_tap_service = mock.Mock(
++            return_value=fake_tap_service)
++        self.app.client_manager.network.find_port = mock.Mock(
++            return_value={'id': port_id})
++        self.app.client_manager.network.find_tap_service = mock.Mock(
++            side_effect=lambda _, name_or_id: {'id': name_or_id})
+         arg_list = [
+             '--name', fake_tap_service['name'],
+             '--port', fake_tap_service['port_id'],
+@@ -73,21 +78,19 @@ class TestCreateTapService(test_fakes.TestNeutronClientOSCV2):
+         ]
+ 
+         parsed_args = self.check_parser(self.cmd, arg_list, verify_list)
+-        self.neutronclient.find_resource = mock.Mock(
+-            return_value={'id': fake_tap_service['port_id']})
++        self.app.client_manager.network.find_tap_service = mock.Mock(
++            return_value=fake_tap_service)
++
+         columns, data = self.cmd.take_action(parsed_args)
+-        self.neutronclient.post.assert_called_once_with(
+-            '/taas/tap_services',
+-            body={
+-                osc_tap_service.TAP_SERVICE:
+-                    {
+-                        'name': fake_tap_service['name'],
+-                        'port_id': fake_tap_service['port_id']
+-                    }
+-            }
+-        )
++        create_tap_s_mock = self.app.client_manager.network.create_tap_service
++        create_tap_s_mock.assert_called_once_with(
++            **{'name': fake_tap_service['name'],
++               'port_id': fake_tap_service['port_id']})
+         self.assertEqual(self.columns, columns)
+-        self.assertItemEqual(_get_data(fake_tap_service), data)
++        fake_data = _get_data(
++            fake_tap_service,
++            osc_tap_service._get_columns(fake_tap_service)[1])
++        self.assertEqual(fake_data, data)
+ 
+ 
+ class TestListTapService(test_fakes.TestNeutronClientOSCV2):
+@@ -100,7 +103,10 @@ class TestListTapService(test_fakes.TestNeutronClientOSCV2):
+         fake_tap_services = fakes.FakeTapService.create_tap_services(
+             attrs={'port_id': uuidutils.generate_uuid()},
+             count=4)
+-        self.neutronclient.list = mock.Mock(return_value=fake_tap_services)
++        self.app.client_manager.network = mock.Mock()
++        self.app.client_manager.network.tap_services = mock.Mock(
++            return_value=fake_tap_services)
++
+         arg_list = []
+         verify_list = []
+ 
+@@ -108,20 +114,22 @@ class TestListTapService(test_fakes.TestNeutronClientOSCV2):
+ 
+         headers, data = self.cmd.take_action(parsed_args)
+ 
+-        self.neutronclient.list.assert_called_once()
++        self.app.client_manager.network.tap_services.assert_called_once()
+         self.assertEqual(headers, list(headers_long))
+         self.assertListItemEqual(
+             list(data),
+             [_get_data(fake_tap_service, columns_long) for fake_tap_service
+-             in fake_tap_services[osc_tap_service.TAP_SERVICES]]
++             in fake_tap_services]
+         )
+ 
+ 
+ class TestDeleteTapService(test_fakes.TestNeutronClientOSCV2):
+     def setUp(self):
+         super(TestDeleteTapService, self).setUp()
+-        self.neutronclient.find_resource = mock.Mock(
+-            side_effect=lambda _, name_or_id: {'id': name_or_id})
++        self.app.client_manager.network = mock.Mock()
++        self.app.client_manager.network.find_tap_service = mock.Mock(
++            side_effect=lambda name_or_id, ignore_missing:
++            tap_service.TapService(id=name_or_id))
+         self.cmd = osc_tap_service.DeleteTapService(self.app, self.namespace)
+ 
+     def test_delete_tap_service(self):
+@@ -130,7 +138,7 @@ class TestDeleteTapService(test_fakes.TestNeutronClientOSCV2):
+         fake_tap_service = fakes.FakeTapService.create_tap_service(
+             attrs={'port_id': uuidutils.generate_uuid()}
+         )
+-        self.neutronclient.delete = mock.Mock()
++        self.app.client_manager.network.delete_tap_service = mock.Mock()
+ 
+         arg_list = [
+             fake_tap_service['id'],
+@@ -140,20 +148,27 @@ class TestDeleteTapService(test_fakes.TestNeutronClientOSCV2):
+         ]
+ 
+         parsed_args = self.check_parser(self.cmd, arg_list, verify_list)
+-
+         result = self.cmd.take_action(parsed_args)
+ 
+-        self.neutronclient.delete.assert_called_once_with(
+-            osc_tap_service.resource_path % ('tap_services',
+-                                             fake_tap_service['id']))
++        mock_delete_tap_s = self.app.client_manager.network.delete_tap_service
++        mock_delete_tap_s.assert_called_once_with(fake_tap_service['id'])
+         self.assertIsNone(result)
+ 
+ 
+ class TestShowTapService(test_fakes.TestNeutronClientOSCV2):
++    columns = (
++        'id',
++        'name',
++        'port_id',
++        'status',
++    )
++
+     def setUp(self):
+         super(TestShowTapService, self).setUp()
+-        self.neutronclient.find_resource = mock.Mock(
+-            side_effect=lambda _, name_or_id: {'id': name_or_id})
++        self.app.client_manager.network = mock.Mock()
++        self.app.client_manager.network.find_tap_service = mock.Mock(
++            side_effect=lambda name_or_id, ignore_missing:
++            tap_service.TapService(id=name_or_id))
+         self.cmd = osc_tap_service.ShowTapService(self.app, self.namespace)
+ 
+     def test_show_tap_service(self):
+@@ -162,8 +177,8 @@ class TestShowTapService(test_fakes.TestNeutronClientOSCV2):
+         fake_tap_service = fakes.FakeTapService.create_tap_service(
+             attrs={'port_id': uuidutils.generate_uuid()}
+         )
+-        self.neutronclient.get = mock.Mock(
+-            return_value={osc_tap_service.TAP_SERVICE: fake_tap_service})
++        self.app.client_manager.network.get_tap_service = mock.Mock(
++            return_value=fake_tap_service)
+         arg_list = [
+             fake_tap_service['id'],
+         ]
+@@ -175,11 +190,14 @@ class TestShowTapService(test_fakes.TestNeutronClientOSCV2):
+ 
+         headers, data = self.cmd.take_action(parsed_args)
+ 
+-        self.neutronclient.get.assert_called_once_with(
+-            osc_tap_service.resource_path % ('tap_services',
+-                                             fake_tap_service['id']))
+-        self.assertEqual(sorted_headers, headers)
+-        self.assertItemEqual(_get_data(fake_tap_service), data)
++        mock_get_tap_s = self.app.client_manager.network.get_tap_service
++        mock_get_tap_s.assert_called_once_with(
++            fake_tap_service['id'])
++        self.assertEqual(self.columns, headers)
++        fake_data = _get_data(
++            fake_tap_service,
++            osc_tap_service._get_columns(fake_tap_service)[1])
++        self.assertItemEqual(fake_data, data)
+ 
+ 
+ class TestUpdateTapService(test_fakes.TestNeutronClientOSCV2):
+@@ -187,18 +205,19 @@ class TestUpdateTapService(test_fakes.TestNeutronClientOSCV2):
+     _new_name = 'new_name'
+ 
+     columns = (
+-        'ID',
+-        'Name',
+-        'Port',
+-        'Status',
+-        'Tenant',
++        'id',
++        'name',
++        'port_id',
++        'status',
+     )
+ 
+     def setUp(self):
+         super(TestUpdateTapService, self).setUp()
+         self.cmd = osc_tap_service.UpdateTapService(self.app, self.namespace)
+-        self.neutronclient.find_resource = mock.Mock(
+-            side_effect=lambda _, name_or_id: {'id': name_or_id})
++        self.app.client_manager.network = mock.Mock()
++        self.app.client_manager.network.find_tap_service = mock.Mock(
++            side_effect=lambda name_or_id, ignore_missing:
++            tap_service.TapService(id=name_or_id))
+ 
+     def test_update_tap_service(self):
+         """Test update tap service"""
+@@ -208,8 +227,8 @@ class TestUpdateTapService(test_fakes.TestNeutronClientOSCV2):
+         new_tap_service = copy.deepcopy(fake_tap_service)
+         new_tap_service['name'] = self._new_name
+ 
+-        self.neutronclient.put = mock.Mock(
+-            return_value={osc_tap_service.TAP_SERVICE: new_tap_service})
++        self.app.client_manager.network.update_tap_service = mock.Mock(
++            return_value=new_tap_service)
+ 
+         arg_list = [
+             fake_tap_service['id'],
+@@ -221,9 +240,11 @@ class TestUpdateTapService(test_fakes.TestNeutronClientOSCV2):
+         columns, data = self.cmd.take_action(parsed_args)
+         attrs = {'name': self._new_name}
+ 
+-        self.neutronclient.put.assert_called_once_with(
+-            osc_tap_service.resource_path % ('tap_services',
+-                                             new_tap_service['id']),
+-            {osc_tap_service.TAP_SERVICE: attrs})
++        mock_update_tap_s = self.app.client_manager.network.update_tap_service
++        mock_update_tap_s.assert_called_once_with(
++            fake_tap_service['id'], **attrs)
+         self.assertEqual(self.columns, columns)
+-        self.assertItemEqual(_get_data(new_tap_service), data)
++        fake_data = _get_data(
++            new_tap_service,
++            osc_tap_service._get_columns(new_tap_service)[1])
++        self.assertItemEqual(fake_data, data)
+diff --git a/requirements.txt b/requirements.txt
+index 740ee63..4514220 100644
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -6,6 +6,8 @@ pbr>=5.5.0 # Apache-2.0
+ Babel>=2.8.0 # BSD
+ neutron>=16.0.0.0b1  # Apache-2.0
+ neutron-lib>=2.11.0 # Apache-2.0
++openstacksdk>=0.102.0 # Apache-2.0
++osc-lib>=2.3.0 # Apache-2.0
+ 
+ # Opt-in for neutron-lib consumption patches
+ # http://lists.openstack.org/pipermail/openstack-dev/2018-September/135063.html
+-- 
+2.51.0
+

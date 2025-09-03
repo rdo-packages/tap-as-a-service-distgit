@@ -1,0 +1,20 @@
+From 6bc905d054539933efd9ae017872dc4e67d95813 Mon Sep 17 00:00:00 2001
+From: Miro Tomaska <mtomaska@redhat.com>
+Date: Fri, 5 Sep 2025 14:42:03 -0400
+Subject: [PATCH 8/8] [Downstream only]  Upstream OVN tap mirror support was
+ added in 2025.1 release, but this feature was cherry-picked to downstream
+ based on 2023.1
+
+Related: OSPRH-17068
+---
+ .../{2025.1 => 2023.1}/expand/f8f1f10ebaf9_mirroring_for_taas.py  | 0
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ rename neutron_taas/db/migration/alembic_migration/versions/{2025.1 => 2023.1}/expand/f8f1f10ebaf9_mirroring_for_taas.py (100%)
+
+diff --git a/neutron_taas/db/migration/alembic_migration/versions/2025.1/expand/f8f1f10ebaf9_mirroring_for_taas.py b/neutron_taas/db/migration/alembic_migration/versions/2023.1/expand/f8f1f10ebaf9_mirroring_for_taas.py
+similarity index 100%
+rename from neutron_taas/db/migration/alembic_migration/versions/2025.1/expand/f8f1f10ebaf9_mirroring_for_taas.py
+rename to neutron_taas/db/migration/alembic_migration/versions/2023.1/expand/f8f1f10ebaf9_mirroring_for_taas.py
+-- 
+2.51.0
+
