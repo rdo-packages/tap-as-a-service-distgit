@@ -17,7 +17,7 @@ leaving one port to another port, which is usually different from the original \
 destinations of the packets being mirrored.
 
 Name:           python-%{plugin}
-Version:        15.0.0
+Version:        15.0.1
 Release:        1%{?dist}
 Summary:        Neutron Tap as a Service
 License:        Apache-2.0
@@ -152,6 +152,9 @@ export PYTHON=%{__python3}
 %{python3_sitelib}/%{module}/tests
 
 %changelog
+* Tue Jul 21 2026 RDO <dev@lists.rdoproject.org> 15.0.1-1
+- Update to 15.0.1
+
 * Wed Apr 02 2025 RDO <dev@lists.rdoproject.org> 15.0.0-1
 - Update to 15.0.0
 
